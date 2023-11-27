@@ -4,25 +4,25 @@ const byte ROWS = 4; //four rows
 const byte COLS = 4; //four columns
 
 char keys[ROWS][COLS] = {
-  {'1', '2', '3', 'A'},
-  {'4', '5', '6', 'B'},
-  {'7', '8', '9', 'C'},
-  {'*', '0', '#', 'D'}
+  {'1', '2', '3', 'F'},
+  {'4', '5', '6', 'E'},
+  {'7', '8', '9', 'D'},
+  {'A', '0', 'B', 'C'}
 };
 
-byte rowPins[ROWS] = {A2, A3, A4, A5}; // connect to the row pinouts of the keypad
-byte colPins[COLS] = {A0, A1, A6, A7}; // connect to the column pinouts of the keypad
+byte rowPins[ROWS] = {PE_5, PB_4, PA_5, PA_6}; // connect to the row pinouts of the keypad
+byte colPins[COLS] = {PB_5, PB_0, PB_1, PE_4}; // connect to the column pinouts of the keypad
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
-unsigned long debounceTime = 50; // Adjust this value as needed
+unsigned long debounceTime = 50; //(ms) Adjust this value as needed.
 
 void setup() {
-  Serial.begin(9600);
-  attachInterrupt(digitalPinToInterrupt(A0), keypadInterrupt, FALLING);
-  attachInterrupt(digitalPinToInterrupt(A1), keypadInterrupt, FALLING);
-  attachInterrupt(digitalPinToInterrupt(A6), keypadInterrupt, FALLING);
-  attachInterrupt(digitalPinToInterrupt(A7), keypadInterrupt, FALLING);
+  Serial.begin(9600); //Double check baud rate.
+  attachInterrupt(digitalPinToInterrupt(PB_5), keypadInterrupt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PB_0), keypadInterrupt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PB_1), keypadInterrupt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PE_4), keypadInterrupt, FALLING);
 }
 
 void loop() {

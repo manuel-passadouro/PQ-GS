@@ -15,14 +15,14 @@ byte colPins[COLS] = {PB_5, PB_0, PB_1, PE_4}; // connect to the column pinouts 
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
-unsigned long debounceTime = 50; //(ms) Adjust this value as needed.
+//unsigned long debounceTime = 50; //(ms) Adjust this value as needed.
 
 void setup() {
   Serial.begin(9600); //Double check baud rate.
-  attachInterrupt(digitalPinToInterrupt(PB_5), keypadInterrupt, FALLING);
-  attachInterrupt(digitalPinToInterrupt(PB_0), keypadInterrupt, FALLING);
-  attachInterrupt(digitalPinToInterrupt(PB_1), keypadInterrupt, FALLING);
-  attachInterrupt(digitalPinToInterrupt(PE_4), keypadInterrupt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PE_5), keypadInterrupt, RISING); //Y1
+  attachInterrupt(digitalPinToInterrupt(PB_4), keypadInterrupt, RISING); //Y2
+  attachInterrupt(digitalPinToInterrupt(PA_5), keypadInterrupt, RISING); //Y3
+  attachInterrupt(digitalPinToInterrupt(PA_6), keypadInterrupt, RISING); //Y4
 }
 
 void loop() {
@@ -30,14 +30,14 @@ void loop() {
 }
 
 void keypadInterrupt() {
-  static unsigned long lastDebounceTime = 0;
-  unsigned long currentTime = millis();
+  //static unsigned long lastDebounceTime = 0;
+  //unsigned long currentTime = millis();
 
-  if (currentTime - lastDebounceTime > debounceTime) {
+  //if (currentTime - lastDebounceTime > debounceTime) {
     char key = keypad.getKey();
     if (key != NO_KEY) {
       Serial.println(key);
     }
-    lastDebounceTime = currentTime;
-  }
+    //lastDebounceTime = currentTime;
+  //}
 }

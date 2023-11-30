@@ -1,4 +1,4 @@
-const int buzzerPin = PB_2; // Change this to the actual pin you are using for the buzzer
+const int buzzerPin = PC_4; // Change this to the actual pin you are using for the buzzer
 
 void setup() {
   pinMode(buzzerPin, OUTPUT);

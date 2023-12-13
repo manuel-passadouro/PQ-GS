@@ -1,24 +1,36 @@
-const int buzzerPin = PC_4; // Change this to the actual pin you are using for the buzzer
+#include "pitches.h"
+#include "xmas-songs.h"
+
+// BUZZER WORKING 8/12/2023
+
+#define BUZZERPIN   PC_4
 
 void setup() {
-  pinMode(buzzerPin, OUTPUT);
-  //analogWriteResolution(12); // Not in library, defaults to 12 bit.
+  pinMode(BUZZERPIN, OUTPUT);
 }
 
 void loop() {
-  // Play a rising tone
-  for (int i = 0; i <= 255; i++) {
-    analogWrite(buzzerPin, i);
-    delay(10);
-  }
+  weWishYou(160);    // songTempo is a uint8_t so it can be 0-255.
+  delay(2000);
 
-  delay(500); // Pause between rising and falling tones
+  //All the songs repository with the respectively velocities
 
-  // Play a falling tone
-  for (int i = 255; i >= 0; i--) {
-    analogWrite(buzzerPin, i);
-    delay(10);
-  }
-
-  delay(500); // Pause between falling and rising tones
+  //awayInAManger(125); 
+  //carolOfTheBells(135);
+  //deckTheHalls(150);
+  //goTellItOnTheMountain(140);
+  //godRestYe(170);
+  //harkTheHerald(140);
+  //jingleBells(180);
+  //joyToTheWorld(160);
+  //oChristmasTree(115);
+  //oComeAllYe(140);
+  //oLittleTown(125);
+  //rudolfTheRedNosed(150);
+  //santaClausIsComin(137);
+  //silentNight(130);
+  //theFirstNoel(130);
+  //weThreeKings(144);
+  //weWishYou(160);
+  //whiteChristmas(155);
 }

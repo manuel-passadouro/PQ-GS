@@ -25,4 +25,6 @@
 
 void Receive_UART(void);
 
+void UART3IntHandler(void);
+
 #endif //UART_H

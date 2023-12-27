@@ -10,15 +10,20 @@ void Init_Peripherals()
 {
     //Enable and wait for the port to be ready for access
     SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);  //PWM Buzzer (PC4)
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC); //LCD EN (PC5)
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE); //Keypad X (PE2, PE3, PE4, PE5) => (X1, X2, X3, X4) and LCD RS (PE0)
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //Keypad Y (PB0, PB1, PB2, PB3) => (Y1, Y2, Y3, Y4) and LCD Data pins (PB4, PB5, PB6, PB7) => (DB4, DB5, DB6, DB7)
-
-    //Check if the peripheral access is enabled.
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOC));
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOE));
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM0));
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC); //LCD EN (PC5)
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOC));
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);//Keypad X (PE2, PE3, PE4, PE5) => (X1, X2, X3, X4) and LCD RS (PE0)
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOE));
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //Keypad Y (PB0, PB1, PB2, PB3) => (Y1, Y2, Y3, Y4) and LCD Data pins (PB4, PB5, PB6, PB7) => (DB4, DB5, DB6, DB7)
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
+
+    //Enable interrupts globally.
+    IntMasterEnable();
+
 
     //For debug purposes we can comment the peripherals we don't want to use
     Init_Buzzer();
@@ -27,11 +32,6 @@ void Init_Peripherals()
     Init_Tmp100();
     Init_Uart();
 
-    //Initializing LCD
-    Lcd_Init();
-
-    //Initializing I2C
-    Init_I2C();
 }
 
 //-------------------------------------------------------------------- Init_Buzzer: ------------------------------------------------------------------------
@@ -80,6 +80,8 @@ void Init_Lcd(void)
     GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7);      //LCD Data pins (PB4, PB5, PB6, PB7) => (DB4, DB5, DB6, DB7)
     GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_0);                                             //RS (PE0)
     GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_5);                                             //EN (PC5)
+
+    Lcd_Init(); //Calls LCD start-up commands.
 }
 
 //-------------------------------------------------------------------- Init_Tmp100: ------------------------------------------------------------------------
@@ -103,6 +105,8 @@ void Init_Tmp100(void)
 
     GPIOPinTypeI2CSCL(GPIO_PORTA_BASE, GPIO_PIN_6);
     GPIOPinTypeI2C(GPIO_PORTA_BASE, GPIO_PIN_7);
+
+    Init_I2C(); //Calls I2C setup.
 }
 
 //-------------------------------------------------------------------- Init_Uart: ------------------------------------------------------------------------
@@ -121,4 +125,10 @@ void Init_Uart()
 
    //Configure UART with a baud rate of 9600, 8-bit data, no parity, and one stop bit
    UARTConfigSetExpClk(UART3_BASE, SysCtlClockGet(), 9600, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
+
+   //Enable UART interrupts
+   IntEnable(INT_UART3);
+   UARTIntRegister(UART3_BASE, UART3IntHandler);
+   UARTIntEnable(UART3_BASE, UART_INT_RX);
+
 }

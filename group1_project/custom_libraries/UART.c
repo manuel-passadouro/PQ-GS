@@ -36,9 +36,8 @@ void Receive_UART(void)
         //Stores the character in the buffer
         if(charP == 1)
         {
-            //buffer[i++] = receivedChar;
+            buffer[i++] = receivedChar;
             Lcd_Write_Char(receivedChar);
-            i++;
             //return buffer;
         }
     }
@@ -46,3 +45,21 @@ void Receive_UART(void)
     //Add a null character to the end of the string
     buffer[i] = '\0';
 }
+
+void UART3IntHandler(void)
+{
+    uint32_t ui32Status;
+
+       // Get the interrupt status (masked interrupt).
+       ui32Status = UARTIntStatus(UART3_BASE, true);
+
+       // Clear interrupt flag.
+       UARTIntClear(UART3_BASE, ui32Status);
+
+       // Check if the receive interrupt is triggered (if status matches UART interrupt mask).
+       if (ui32Status & UART_INT_RX)
+       {
+           Receive_UART();
+       }
+}
+

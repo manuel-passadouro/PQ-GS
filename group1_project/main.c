@@ -17,7 +17,7 @@ int main(void)
     while(1)
     {
         TMP100_Read();
-        Receive_UART();
+        //Receive_UART();
 
         //SysCtlDelay(7000000);
     }

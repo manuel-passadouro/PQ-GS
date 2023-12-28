@@ -12,6 +12,7 @@ void Receive_UART(void)
     char receivedChar;
     char msg[MSG_SIZE];
     int charP=0;
+    int num_msgs_test;
 
     while (i < MSG_SIZE - 1)
     {
@@ -24,13 +25,13 @@ void Receive_UART(void)
         //Checks if it is a 'P' character
         if (receivedChar == 'P')
         {
-            charP=1;
+            charP = 1;
         }
 
         //Checks if it is a terminal character
         if (receivedChar == '\n' || receivedChar == '\r')
         {
-            charP=0;
+            charP = 0;
             break;
         }
 
@@ -38,17 +39,23 @@ void Receive_UART(void)
         if(charP == 1)
         {
             msg[i++] = receivedChar;
-            Lcd_Write_Char(receivedChar);
-            //return buffer;
         }
     }
 
     //Add a null character to the end of the string
     msg[i] = '\0';
+    num_msgs++;
 
-    // Store the received message in UART_buffer
+    //Store the received message in UART_buffer
     strncpy(UART_buffer[buffer_head], msg, MSG_SIZE);
-    //Increments buffer head, wraps around when buffer is full (circular buffer).
+
+    Lcd_Clear();
+
+    Lcd_Write_String(msg);
+
+    //Lcd_Write_String(UART_buffer[0]); //Write from buffer.
+
+    //Increments buffer head, wraps around when buffer is full (circular buffer)
     buffer_head = (buffer_head + 1) % BUFFER_SIZE;
 }
 
@@ -56,16 +63,16 @@ void UART3IntHandler(void)
 {
     uint32_t ui32Status;
 
-       // Get the interrupt status (masked interrupt).
-       ui32Status = UARTIntStatus(UART3_BASE, true);
+   //Get the interrupt status (masked interrupt should be RX type)
+   ui32Status = UARTIntStatus(UART3_BASE, true);
 
-       // Clear interrupt flag.
-       UARTIntClear(UART3_BASE, ui32Status);
+   //Clear interrupt flag
+   UARTIntClear(UART3_BASE, ui32Status);
 
-       // Check if the receive interrupt is triggered (if status matches UART interrupt mask).
-       if (ui32Status & UART_INT_RX)
-       {
-           Receive_UART();
-       }
+   //Check if the receive interrupt is triggered (if status matches UART interrupt mask)
+   if (ui32Status & UART_INT_RX)
+   {
+       Receive_UART();
+   }
 }
 

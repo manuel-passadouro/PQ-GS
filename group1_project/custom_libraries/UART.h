@@ -25,12 +25,13 @@
 
 extern char UART_buffer[BUFFER_SIZE][MSG_SIZE];
 extern int buffer_head;
+extern int num_msgs;
+extern char str_msgs;
 
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
 void Receive_UART(void);
-
 void UART3IntHandler(void);
 
 #endif //UART_H

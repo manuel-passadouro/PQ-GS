@@ -147,8 +147,6 @@ void PortEIntHandler(void)
 
         Lcd_Clear();
         Lcd_Write_Char(key);
-        Lcd_Write_Char(' ');
-        Lcd_Write_String(UART_buffer[0]); //Write from buffer.
 
         SysCtlDelay(7000000);
     }
@@ -169,6 +167,10 @@ void PortEIntHandler(void)
 
         Lcd_Clear();
         Lcd_Write_Char(key);
+        Lcd_Write_Char(' ');
+        Lcd_Write_String("NUM MSG: "); //Write from buffer.
+        char num_msgs_str = (char)num_msgs;
+        Lcd_Write_Char(num_msgs_str);
 
         SysCtlDelay(7000000);
     }

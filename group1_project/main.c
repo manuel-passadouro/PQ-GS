@@ -12,13 +12,11 @@
 //--------------------------------------------------------------------- MAIN CODE: --------------------------------------------------------------------------
 
 char UART_buffer[BUFFER_SIZE][MSG_SIZE];
-
 int buffer_head;
-
+int num_msgs = 0;
 
 int main(void)
 {
-
     memset(UART_buffer, 0, sizeof(UART_buffer)); //Init buffer at 0.
     buffer_head = 0; //Set head of buffer to 0.
 
@@ -26,7 +24,7 @@ int main(void)
 
     while(1)
     {
-        TMP100_Read();
+        //TMP100_Read();
         //Receive_UART();
 
         //SysCtlDelay(7000000);

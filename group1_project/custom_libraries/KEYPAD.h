@@ -14,6 +14,7 @@
 #include "driverlib/sysctl.h"
 #include "UART.h"
 #include "LCD.h"
+#include "TMP100.h"
 
 
 //Some defines to help understanding the code :)

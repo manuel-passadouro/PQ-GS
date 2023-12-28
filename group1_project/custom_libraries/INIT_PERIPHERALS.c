@@ -21,9 +21,8 @@ void Init_Peripherals()
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //Keypad Y (PB0, PB1, PB2, PB3) => (Y1, Y2, Y3, Y4) and LCD Data pins (PB4, PB5, PB6, PB7) => (DB4, DB5, DB6, DB7)
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
 
-    //Enable interrupts globally.
+    //Enable interrupts globally
     IntMasterEnable();
-
 
     //For debug purposes we can comment the peripherals we don't want to use
     Init_Buzzer();
@@ -31,7 +30,6 @@ void Init_Peripherals()
     Init_Lcd();
     Init_Tmp100();
     Init_Uart();
-
 }
 
 //-------------------------------------------------------------------- Init_Buzzer: ------------------------------------------------------------------------
@@ -81,7 +79,10 @@ void Init_Lcd(void)
     GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_0);                                             //RS (PE0)
     GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_5);                                             //EN (PC5)
 
-    Lcd_Init(); //Calls LCD start-up commands.
+    //Calls LCD start-up commands
+    Lcd_Init();
+
+    Lcd_Clear();
 }
 
 //-------------------------------------------------------------------- Init_Tmp100: ------------------------------------------------------------------------
@@ -106,7 +107,8 @@ void Init_Tmp100(void)
     GPIOPinTypeI2CSCL(GPIO_PORTA_BASE, GPIO_PIN_6);
     GPIOPinTypeI2C(GPIO_PORTA_BASE, GPIO_PIN_7);
 
-    Init_I2C(); //Calls I2C setup.
+    //Calls I2C setup
+    Init_I2C();
 }
 
 //-------------------------------------------------------------------- Init_Uart: ------------------------------------------------------------------------
@@ -130,5 +132,4 @@ void Init_Uart()
    IntEnable(INT_UART3);
    UARTIntRegister(UART3_BASE, UART3IntHandler);
    UARTIntEnable(UART3_BASE, UART_INT_RX);
-
 }

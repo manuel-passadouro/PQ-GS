@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 #include "inc/tm4c123gh6pm.h"
 #include "inc/hw_memmap.h"
 #include "driverlib/gpio.h"
@@ -16,17 +17,20 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/uart.h"
 #include "driverlib/interrupt.h"
+#include "driverlib/timer.h"
 #include "inc/hw_i2c.h"
 #include "LCD.h"
 
 //UART defines
 #define BUFFER_SIZE 20
-#define MSG_SIZE 80
+#define MSG_SIZE 60
 
 extern char UART_buffer[BUFFER_SIZE][MSG_SIZE];
 extern int buffer_head;
 extern int num_msgs;
 extern char str_msgs;
+
+extern struct tm start_time;
 
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------

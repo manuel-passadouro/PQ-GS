@@ -21,6 +21,9 @@ void Init_Peripherals()
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //Keypad Y (PB0, PB1, PB2, PB3) => (Y1, Y2, Y3, Y4) and LCD Data pins (PB4, PB5, PB6, PB7) => (DB4, DB5, DB6, DB7)
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
 
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_WTIMER5); //Init timer5 (32 bit) to count time for UART timestamp
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_WTIMER5));
+
     //Enable interrupts globally
     IntMasterEnable();
 
@@ -30,6 +33,7 @@ void Init_Peripherals()
     Init_Lcd();
     Init_Tmp100();
     Init_Uart();
+    Init_Timer();
 }
 
 //-------------------------------------------------------------------- Init_Buzzer: ------------------------------------------------------------------------
@@ -132,4 +136,11 @@ void Init_Uart()
    IntEnable(INT_UART3);
    UARTIntRegister(UART3_BASE, UART3IntHandler);
    UARTIntEnable(UART3_BASE, UART_INT_RX);
+}
+
+void Init_Timer()
+{
+    TimerConfigure(WTIMER5_BASE, TIMER_CFG_PERIODIC); //Full width time that count down
+    TimerLoadSet64(WTIMER5_BASE, 0xFFFFFFFFFFFFFFFF); // Load with maximum value
+    TimerEnable(WTIMER5_BASE, TIMER_A);
 }

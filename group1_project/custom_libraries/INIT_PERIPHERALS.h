@@ -23,5 +23,6 @@ void Init_Keypad(void);
 void Init_Lcd(void);
 void Init_Tmp100(void);
 void Init_Uart(void);
+void Init_Timer(void);
 
 #endif //Interrupts_H

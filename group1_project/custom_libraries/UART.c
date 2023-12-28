@@ -12,7 +12,14 @@ void Receive_UART(void)
     char receivedChar;
     char msg[MSG_SIZE];
     int charP=0;
-    int num_msgs_test;
+    uint64_t timestamp;
+    time_t rawTime_t;
+    time_t current_time_t;
+    time_t start_time_t;
+    struct tm *current_time_info;
+    char current_time_str[20];
+
+
 
     while (i < MSG_SIZE - 1)
     {
@@ -42,21 +49,42 @@ void Receive_UART(void)
         }
     }
 
-    //Add a null character to the end of the string
-    msg[i] = '\0';
-    num_msgs++;
+    // Get the current timestamp from the system timer
+    timestamp = TimerValueGet64(WTIMER5_BASE);
+
+    //Calculate elapsed seconds using clock frequency
+    rawTime_t = (time_t)(timestamp / SysCtlClockGet());
+
+    //Convert start_time to time_t format for calculations
+    start_time_t = mktime(&start_time);
+
+    //Calculate the current time as time_t
+    current_time_t = start_time_t + rawTime_t;
+
+    // Convert time in time_t to standard c time format
+    current_time_info = localtime(&current_time_t);
+
+    //Convert from standard c time format to string
+    strftime(current_time_str, sizeof(current_time_str), "%Y-%m-%d %H:%M:%S", current_time_info);
+
+    // Append time string to msg string using sprintf
+    sprintf(msg + strlen(msg), "%s", current_time_str);
+
+    // Add a null character at the end of string
+    msg[sizeof(msg) - 1] = '\0';
 
     //Store the received message in UART_buffer
     strncpy(UART_buffer[buffer_head], msg, MSG_SIZE);
+
+    num_msgs++;
 
     Lcd_Clear();
 
     Lcd_Write_String(msg);
 
-    //Lcd_Write_String(UART_buffer[0]); //Write from buffer.
 
     //Increments buffer head, wraps around when buffer is full (circular buffer)
-    buffer_head = (buffer_head + 1) % BUFFER_SIZE;
+    //buffer_head = (buffer_head + 1) % BUFFER_SIZE;
 }
 
 void UART3IntHandler(void)

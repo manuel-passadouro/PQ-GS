@@ -147,6 +147,8 @@ void PortEIntHandler(void)
 
         Lcd_Clear();
         Lcd_Write_Char(key);
+        Lcd_Write_Char(' ');
+        Lcd_Write_String(UART_buffer[0]); //Write from buffer.
 
         SysCtlDelay(7000000);
     }

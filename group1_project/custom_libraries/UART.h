@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include "inc/tm4c123gh6pm.h"
 #include "inc/hw_memmap.h"
 #include "driverlib/gpio.h"
@@ -19,7 +20,12 @@
 #include "LCD.h"
 
 //UART defines
-#define buffer_size 40
+#define BUFFER_SIZE 20
+#define MSG_SIZE 80
+
+extern char UART_buffer[BUFFER_SIZE][MSG_SIZE];
+extern int buffer_head;
+
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 

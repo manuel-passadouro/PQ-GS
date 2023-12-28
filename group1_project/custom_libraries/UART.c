@@ -3,16 +3,17 @@
 
 #include "UART.h"
 
+
 //--------------------------------------------------------------------- Receive_UART: --------------------------------------------------------------------------
 
 void Receive_UART(void)
 {
     uint8_t i = 0;
     char receivedChar;
-    char buffer[buffer_size];
+    char msg[MSG_SIZE];
     int charP=0;
 
-    while (i < buffer_size - 1)
+    while (i < MSG_SIZE - 1)
     {
         //Waits until one character be ready to be read
         while (!UARTCharsAvail(UART3_BASE));
@@ -36,14 +37,19 @@ void Receive_UART(void)
         //Stores the character in the buffer
         if(charP == 1)
         {
-            buffer[i++] = receivedChar;
+            msg[i++] = receivedChar;
             Lcd_Write_Char(receivedChar);
             //return buffer;
         }
     }
 
     //Add a null character to the end of the string
-    buffer[i] = '\0';
+    msg[i] = '\0';
+
+    // Store the received message in UART_buffer
+    strncpy(UART_buffer[buffer_head], msg, MSG_SIZE);
+    //Increments buffer head, wraps around when buffer is full (circular buffer).
+    buffer_head = (buffer_head + 1) % BUFFER_SIZE;
 }
 
 void UART3IntHandler(void)

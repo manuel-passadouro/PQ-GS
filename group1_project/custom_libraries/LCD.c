@@ -134,7 +134,7 @@ Lcd_Cmd(0x06);// increment the address by 1, shift the cursor to right
 *
 * Description: Writes a character to the LCD
 **************************************************************/
-void Lcd_Write_Char(char a) //Lets change this for string or use this in a "write_string" funtion.
+void Lcd_Write_Char(char a)
 {
 char temp,y;
 temp = a&0x0F;

@@ -12,6 +12,7 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pwm.h"
 #include "driverlib/sysctl.h"
+#include "UART.h"
 #include "LCD.h"
 
 
@@ -27,6 +28,8 @@
 #define COLUMN_X2 0x02
 #define COLUMN_X3 0x04
 #define COLUMN_X4 0x08
+
+extern char UART_buffer[BUFFER_SIZE][MSG_SIZE];
 
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------

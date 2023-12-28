@@ -1,4 +1,5 @@
 //Includes
+#include <string.h>
 #include "custom_libraries/LCD.h"
 #include "custom_libraries/KEYPAD.h"
 #include "custom_libraries/TMP100.h"
@@ -10,8 +11,17 @@
 
 //--------------------------------------------------------------------- MAIN CODE: --------------------------------------------------------------------------
 
+char UART_buffer[BUFFER_SIZE][MSG_SIZE];
+
+int buffer_head;
+
+
 int main(void)
 {
+
+    memset(UART_buffer, 0, sizeof(UART_buffer)); //Init buffer at 0.
+    buffer_head = 0; //Set head of buffer to 0.
+
     Init_Peripherals();
 
     while(1)

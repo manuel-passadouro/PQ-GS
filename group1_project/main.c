@@ -15,6 +15,7 @@
 
 char UART_buffer[BUFFER_SIZE][MSG_SIZE];
 int buffer_head;
+int buffer_tail;
 int num_msgs = 0;
 
 struct tm start_time;

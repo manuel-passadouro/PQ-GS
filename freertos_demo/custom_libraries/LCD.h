@@ -38,6 +38,10 @@ for controlling
 #include "inc/hw_memmap.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/gpio.h"
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "UART.h"
+#include "task.h"
 
 #define RS GPIO_PIN_0 //Register Select (Character or Instruction)
 #define EN GPIO_PIN_5 //LCD Clock Enable PIN, Falling Edge Triggered
@@ -47,6 +51,8 @@ for controlling
 #define D5 GPIO_PIN_5 //Bit 5
 #define D6 GPIO_PIN_6 //Bit 6
 #define D7 GPIO_PIN_7 //Bit 7
+
+extern QueueHandle_t lcdQueue;
 
 // function prototypes
 void Lcd_Port(char a);

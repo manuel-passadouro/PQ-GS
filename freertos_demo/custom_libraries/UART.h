@@ -20,10 +20,13 @@
 #include "driverlib/timer.h"
 #include "inc/hw_i2c.h"
 #include "LCD.h"
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "semphr.h"
 
 //UART defines
 #define BUFFER_SIZE 20
-#define MSG_SIZE 100
+#define MSG_SIZE 50
 
 extern char UART_buffer[BUFFER_SIZE][MSG_SIZE];
 extern int buffer_head;
@@ -33,10 +36,14 @@ extern char str_msgs;
 
 extern struct tm start_time;
 
+extern SemaphoreHandle_t bufferMutex;
+
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
 void Receive_UART(void);
 void UART3IntHandler(void);
+void StoreInCircularBuffer(const char*);
+
 
 #endif //UART_H

@@ -183,7 +183,6 @@ Lcd_Cmd(0x01);
 Lcd_Cmd(0x08);
 }
 
-/*
 void LCDTask(void *pvParameters) {
     char msgToSend[MSG_SIZE];
 
@@ -197,4 +196,3 @@ void LCDTask(void *pvParameters) {
     }
 }
 
-*/

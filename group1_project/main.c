@@ -22,6 +22,9 @@ struct tm start_time;
 
 int main(void)
 {
+
+
+
     memset(UART_buffer, 0, sizeof(UART_buffer)); //Init buffer at 0.
     buffer_head = 0; //Set head of buffer to 0.
 

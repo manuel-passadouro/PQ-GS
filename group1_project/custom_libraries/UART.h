@@ -20,6 +20,7 @@
 #include "driverlib/timer.h"
 #include "inc/hw_i2c.h"
 #include "LCD.h"
+#include "TIME.h"
 
 //UART defines
 #define BUFFER_SIZE 20
@@ -30,9 +31,6 @@ extern int buffer_head;
 extern int buffer_tail;
 extern int num_msgs;
 extern char str_msgs;
-
-extern struct tm start_time;
-
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 

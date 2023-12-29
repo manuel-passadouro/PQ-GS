@@ -138,9 +138,16 @@ void Init_Uart()
    UARTIntEnable(UART3_BASE, UART_INT_RX);
 }
 
+//-------------------------------------------------------------------- Init_Timer: ------------------------------------------------------------------------
+
 void Init_Timer()
 {
-    TimerConfigure(WTIMER5_BASE, TIMER_CFG_PERIODIC); //Full width time that count down
-    TimerLoadSet64(WTIMER5_BASE, 0xFFFFFFFFFFFFFFFF); // Load with maximum value
+    //Full width time that count up
+    TimerConfigure(WTIMER5_BASE, TIMER_CFG_PERIODIC_UP);
+
+    //Load the value 0xFFFFFFFFFFFFFFFF
+    TimerLoadSet64(WTIMER5_BASE, 0xFFFFFFFFFFFFFFFF);
+
+    //Enable the timer A
     TimerEnable(WTIMER5_BASE, TIMER_A);
 }

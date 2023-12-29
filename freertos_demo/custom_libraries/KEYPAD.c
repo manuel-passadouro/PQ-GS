@@ -6,6 +6,8 @@
 
 //------------------------------------------------------------------- KEYPAD INTERRUPT CODE: -------------------------------------------------------------------
 
+QueueHandle_t lcdQueue;
+
 void PortEIntHandler(void)
 {
     int32_t path;
@@ -24,39 +26,61 @@ void PortEIntHandler(void)
     {
         key = '1';
 
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
+
         PWMOutputState(PWM0_BASE, PWM_OUT_6_BIT, true);
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
 
         SysCtlDelay(7000000);
+        //vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X2)
     {
         key = '2';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
+
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
 
         SysCtlDelay(7000000);
+        //vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X3)
     {
         key = '3';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X4)
     {
         key = 'F';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
     //Write in all lines the value correspondent to LINE_Y2, setting to 1 only the line Y2 (in this case) (ex:. 0x02 => 0 0 1 0)
@@ -72,37 +96,57 @@ void PortEIntHandler(void)
     {
         key = '4';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X2)
     {
         key = '5';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X3)
     {
         key = '6';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X4)
     {
         key = 'E';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
     //Write in all lines the value correspondent to LINE_Y3, setting to 1 only the line Y3 (in this case) (ex:. 0x04 => 0 1 0 0)
@@ -118,37 +162,57 @@ void PortEIntHandler(void)
     {
         key = '7';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X2)
     {
         key = '8';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X3)
     {
         key = '9';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X4)
     {
         key = 'D';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
 
@@ -165,43 +229,59 @@ void PortEIntHandler(void)
     {
         key = 'A';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
-        Lcd_Write_Char(' ');
-        Lcd_Write_String("NUM MSG: "); //Write from buffer.
-        char num_msgs_str = (char)num_msgs;
-        Lcd_Write_Char(num_msgs_str);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X2)
     {
         key = '0';
 
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
+
         PWMOutputState(PWM0_BASE, PWM_OUT_6_BIT, false);
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
 
-        SysCtlDelay(7000000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X3)
     {
         key = 'B';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     else if (path == COLUMN_X4)
     {
         key = 'C';
 
-        Lcd_Clear();
-        Lcd_Write_Char(key);
+        if (xQueueSend(lcdQueue, &key, portMAX_DELAY) != pdPASS)
+        {
+            // Handle queue full error if needed
+        }
 
-        SysCtlDelay(7000000);
+        //Lcd_Clear();
+        //Lcd_Write_Char(key);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
     //Clear the INT status for all GPIO pins of the port E

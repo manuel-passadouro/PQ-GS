@@ -23,10 +23,11 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "semphr.h"
+#include "TIME.h"
 
 //UART defines
 #define BUFFER_SIZE 20
-#define MSG_SIZE 50
+#define MSG_SIZE 100
 
 extern char UART_buffer[BUFFER_SIZE][MSG_SIZE];
 extern int buffer_head;
@@ -34,7 +35,6 @@ extern int buffer_tail;
 extern int num_msgs;
 extern char str_msgs;
 
-extern struct tm start_time;
 
 extern SemaphoreHandle_t bufferMutex;
 

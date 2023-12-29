@@ -18,17 +18,16 @@ int buffer_head;
 int buffer_tail;
 int num_msgs = 0;
 
-struct tm start_time;
-
 int main(void)
 {
-
-
+    //Define the frequency of the Clock
+    SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 
     memset(UART_buffer, 0, sizeof(UART_buffer)); //Init buffer at 0.
     buffer_head = 0; //Set head of buffer to 0.
 
-    start_time = getTime(); //Store start time (set manually in TIME.h).
+
+    //start_time = getTime(); //Store start time (set manually in TIME.h).
 
     Init_Peripherals();
 

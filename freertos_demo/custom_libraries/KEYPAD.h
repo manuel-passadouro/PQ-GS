@@ -15,6 +15,8 @@
 #include "UART.h"
 #include "LCD.h"
 #include "TMP100.h"
+#include "queue.h"
+#include "task.h"
 
 
 //Some defines to help understanding the code :)

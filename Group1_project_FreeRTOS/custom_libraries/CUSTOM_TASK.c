@@ -9,8 +9,8 @@ TaskHandle_t xLcd_Task;
 TaskHandle_t xCommand_Task;
 TaskHandle_t xTmp_Task;
 TaskHandle_t xUart_Task;
+TaskHandle_t xinitialization_Task;
 
-SemaphoreHandle_t xSemaphore_Keep_Message;
 SemaphoreHandle_t xSemaphore_Allow_Temperature;
 SemaphoreHandle_t xMutex_lcdQueue;
 
@@ -19,7 +19,7 @@ SemaphoreHandle_t xMutex_lcdQueue;
 void Lcd_Task(void *pvParameters)
 {
     char MsgToWrite[MSG_SIZE];
-    int flag_keep_message = 0;
+    int flag_next_key_clear = 0;
 
     // Create a queue for communication between tasks
     lcdQueue = xQueueCreate(1, sizeof(char[MSG_SIZE]));
@@ -29,28 +29,25 @@ void Lcd_Task(void *pvParameters)
         // Wait for a message with a timeout of 5 seconds
         if (xQueueReceive(lcdQueue, MsgToWrite, 5 * configTICK_RATE_HZ) == pdPASS)
         {
-
             // Message received within the timeout
-            if((strcmp(MsgToWrite, "C") == 0) || (strcmp(MsgToWrite, "E") == 0))
-            {
-                Lcd_Clear();
-            }
-            else if(flag_keep_message == 1)
-            {
-                Lcd_Clear();
-                Lcd_Write_String(MsgToWrite);
-
-                flag_keep_message = 0;
-            }
-            else
-            {
-                if(xSemaphoreTake(xSemaphore_Keep_Message, 0) == pdTRUE)
-                {
-                    flag_keep_message = 1;
-                }
-
-                Lcd_Write_String(MsgToWrite);
-            }
+           if((strcmp(MsgToWrite, "C") == 0) || (strcmp(MsgToWrite, "E") == 0)) //These keys always clear LCD.
+           {
+               Lcd_Clear();
+           }
+           else if(strlen(MsgToWrite) > 1) //If msg is cmd output or temp output string, the next letter from keypad should clear the lcd.
+           {
+               flag_next_key_clear = 1;
+               Lcd_Clear();
+               Lcd_Write_String(MsgToWrite);
+           }
+           else{
+               if(flag_next_key_clear) //If previous msg was cmd or temp string, key clears LCD.
+               {
+                   Lcd_Clear();
+                   flag_next_key_clear = 0;
+               }
+               Lcd_Write_String(MsgToWrite);
+           }
         }
         else
         {
@@ -120,7 +117,6 @@ void Command_Task(void *pvParameters)
                     {
                         if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
                         {
-                            xSemaphoreGive(xSemaphore_Keep_Message);
                             xQueueOverwrite(lcdQueue, "Buzzer ON!");
 
                             xSemaphoreGive(xMutex_lcdQueue);
@@ -130,7 +126,6 @@ void Command_Task(void *pvParameters)
                     {
                         if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
                         {
-                            xSemaphoreGive(xSemaphore_Keep_Message);
                             xQueueOverwrite(lcdQueue, "Buzzer OFF!");
 
                             xSemaphoreGive(xMutex_lcdQueue);
@@ -145,7 +140,6 @@ void Command_Task(void *pvParameters)
                 {
                     if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
                     {
-                        xSemaphoreGive(xSemaphore_Keep_Message);
                         xQueueOverwrite(lcdQueue, "Invalid Command!");
 
                         xSemaphoreGive(xMutex_lcdQueue);
@@ -197,21 +191,17 @@ void Tmp_Task(void *pvParameters)
 
             while(!ulTaskNotifyTake(pdTRUE, portMAX_DELAY))
             {
+                //Get temperature even if it cannot send to LCD yet.
                 temperature_raw = TMP100_Read();
             }
-
-            //ulTaskNotifyTake(pdTRUE,portMAX_DELAY);
-
         }
 
         if(xSemaphoreTake(xMutex_lcdQueue, 0) == pdTRUE)
         {
-            //Toggle the flag_keep_message to keep the temperature message
-            //xSemaphoreGive(xSemaphore_Keep_Message);
 
-            //Send the key value to the lcdQueue
-            xQueueOverwrite(lcdQueue, "C");
-            xSemaphoreGive(xSemaphore_Keep_Message);
+            //xQueueOverwrite(lcdQueue, "C"); //clear LCD first.
+
+            //Send temperature info lcd queue.
             xQueueOverwrite(lcdQueue, &temperature);
 
             xSemaphoreGive(xMutex_lcdQueue);
@@ -223,30 +213,24 @@ void Tmp_Task(void *pvParameters)
 
 void Uart_Task(void *pvParameters)
 {
-    uint32_t ui32Status;
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
     while(1)
     {
+       //Wait to receive the notification from Keypad ISR
+       ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-   //Get the interrupt status (masked interrupt should be RX type)
-   ui32Status = UARTIntStatus(UART3_BASE, true);
-
-   //Clear interrupt flag
-   UARTIntClear(UART3_BASE, ui32Status);
-
-   //Check if the receive interrupt is triggered (if status matches UART interrupt mask)
-   if (ui32Status & UART_INT_RX)
-   {
-
-       Lcd_Clear();
-       //Lcd_Write_String(current_time_str);
-       Lcd_Write_String("AQUI");
-       //Receive_UART();
-   }
-
-   //To prevent the program to get stuck in the ISR
-   portYIELD_FROM_ISR(&xHigherPriorityTaskWoken);
-
+       Receive_UART();
     }
+}
+
+//------------------------------------------------------------------- Initialization_Task: -------------------------------------------------------------------
+
+void Initialization_Task(void *pvParameters) {
+
+    //Init_Peripherals();
+
+    // Enable interrupts globally
+    portENABLE_INTERRUPTS();
+
+    // Suspend the initialization task (it will not run again)
+    vTaskSuspend(NULL);
 }

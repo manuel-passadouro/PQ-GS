@@ -106,11 +106,6 @@ void UART3IntHandler(void)
    if (ui32Status & UART_INT_RX)
    {
        vTaskNotifyGiveFromISR(xUart_Task, &xHigherPriorityTaskWoken);
-
-       Lcd_Clear();
-       //Lcd_Write_String(current_time_str);
-       Lcd_Write_String("ALI");
-       //Receive_UART();
    }
 
    //To prevent the program to get stuck in the ISR

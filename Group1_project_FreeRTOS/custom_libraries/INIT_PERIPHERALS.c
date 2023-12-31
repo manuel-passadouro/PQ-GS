@@ -120,7 +120,6 @@ void Init_Tmp100(void)
 
 void Init_Uart()
 {
-   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
    GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_6 | GPIO_PIN_7);
 
@@ -135,10 +134,10 @@ void Init_Uart()
    //Configure UART with a baud rate of 9600, 8-bit data, no parity, and one stop bit
    UARTConfigSetExpClk(UART3_BASE, SysCtlClockGet(), 9600, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
 
-   //Enable UART interrupts
+   // Enable UART3 interrupt with a priority appropriate for your application
+   //IntPrioritySet(INT_UART3, YOUR_UART_INTERRUPT_PRIORITY);
    IntEnable(INT_UART3);
    UARTIntRegister(UART3_BASE, UART3IntHandler);
-   //UARTIntRegister(UART3_BASE, UART3IntHandler);
    UARTIntEnable(UART3_BASE, UART_INT_RX);
 }
 

@@ -4,6 +4,7 @@
 
 #include "INIT_PERIPHERALS.h"
 
+
 //-------------------------------------------------------------------- Init_Peripherals: ------------------------------------------------------------------------
 
 void Init_Peripherals()
@@ -47,7 +48,7 @@ void Init_Buzzer(void)
     //Configure PWM
     PWMGenConfigure(PWM0_BASE, PWM_GEN_3, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
 
-    // Configure PWM period and starting pulse width
+    //Configure PWM period and starting pulse width
     PWMGenPeriodSet(PWM0_BASE, PWM_GEN_3, 20000);
     PWMPulseWidthSet(PWM0_BASE, PWM_OUT_6, 10000);
     PWMGenEnable(PWM0_BASE, PWM_GEN_3);
@@ -119,6 +120,8 @@ void Init_Tmp100(void)
 
 void Init_Uart()
 {
+   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
    GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_6 | GPIO_PIN_7);
 
    //Configure the UART pins (PC6 and PC7)
@@ -135,6 +138,7 @@ void Init_Uart()
    //Enable UART interrupts
    IntEnable(INT_UART3);
    UARTIntRegister(UART3_BASE, UART3IntHandler);
+   //UARTIntRegister(UART3_BASE, UART3IntHandler);
    UARTIntEnable(UART3_BASE, UART_INT_RX);
 }
 

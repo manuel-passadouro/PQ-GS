@@ -18,8 +18,6 @@
 * D7 ---> PB7
 **************************************************************/
 
-QueueHandle_t lcdQueue;
-
 void Lcd_Port(char a)
 {
 if(a & 1)
@@ -184,28 +182,6 @@ void Lcd_Shift_Left(void)
 {
 Lcd_Cmd(0x01);
 Lcd_Cmd(0x08);
-}
-
-//---------------------------------------------------------------------------------------------------------
-
-void LCDTask(void *pvParameters)
-{
-    char msgToSend[MSG_SIZE];
-    //char msgToSend;
-
-    // Create a queue for communication between tasks
-    lcdQueue = xQueueCreate(BUFFER_SIZE, sizeof(char[MSG_SIZE]));
-
-
-    while (1)
-    {
-        xQueueReceive(lcdQueue, msgToSend, portMAX_DELAY);
-
-        Lcd_Clear();
-        vTaskDelay(pdMS_TO_TICKS(1000));  // Adjust delay as needed
-        Lcd_Write_String(msgToSend);
-        vTaskDelay(pdMS_TO_TICKS(1000));  // Adjust delay as needed
-    }
 }
 
 

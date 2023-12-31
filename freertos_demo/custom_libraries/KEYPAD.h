@@ -15,6 +15,8 @@
 #include "UART.h"
 #include "LCD.h"
 #include "TMP100.h"
+#include "CUSTOM_TASK.h"
+#include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
 
@@ -32,8 +34,7 @@
 #define COLUMN_X3 0x04
 #define COLUMN_X4 0x08
 
-extern char UART_buffer[BUFFER_SIZE][MSG_SIZE];
-
+extern char key[1];
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 

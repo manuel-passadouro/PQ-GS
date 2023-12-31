@@ -18,7 +18,7 @@ void Init_I2C(void)
     I2CMasterControl(I2C_BASE_ADDR, I2C_MASTER_CMD_BURST_SEND_START);
     while(I2CMasterBusy(I2C_BASE_ADDR));
 
-    //Set the resolution to 12 bit (0.0625°C)
+    //Set the resolution to 12 bit (0.0625ï¿½C)
     I2CMasterDataPut(I2C_BASE_ADDR, 0x60);
 
     //Finish the burst sequence
@@ -28,7 +28,7 @@ void Init_I2C(void)
 
 //-------------------------------------------------------------------- TMP100_Read: ------------------------------------------------------------------------
 
-void TMP100_Read(void)
+float TMP100_Read(void)
 {
     uint16_t tempData;
     float temperature_raw;
@@ -69,8 +69,7 @@ void TMP100_Read(void)
     //Convert the float value of the reading to an array to show in LCD later
     FloatToArray(temperature_raw, temperature_array, 3);
 
-    Lcd_Clear();
-    Lcd_Write_String(temperature_array);
+    return temperature_raw;
 }
 
 //---------------------------------------------------------------------- Reverse: --------------------------------------------------------------------------
@@ -144,8 +143,3 @@ void FloatToArray(float n, char* res, int afterpoint)
         IntToString((int)fpart, res + i + 1, afterpoint);
     }
 }
-
-
-
-
-

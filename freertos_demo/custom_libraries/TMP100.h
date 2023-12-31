@@ -22,12 +22,12 @@
 #define TMP100_TEMP_REG 0x00
 #define MAX_STRING_LENGTH 10
 
-extern char temperature_array[20];
+//extern char temperature_array[20];
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
 void Init_I2C(void);
-void TMP100_Read(void);
+float TMP100_Read(void);
 void Reverse(char* str, int len);
 int IntToString(int x, char str[], int d);
 void FloatToArray(float n, char* res, int afterpoint);

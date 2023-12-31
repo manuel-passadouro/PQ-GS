@@ -16,3 +16,4 @@ encoding//Debug/third_party/FreeRTOS/Source/subdir_rules.mk=UTF-8
 encoding//Debug/third_party/FreeRTOS/Source/subdir_vars.mk=UTF-8
 encoding//Debug/utils/subdir_rules.mk=UTF-8
 encoding//Debug/utils/subdir_vars.mk=UTF-8
+encoding//custom_libraries/TMP100.c=UTF-8

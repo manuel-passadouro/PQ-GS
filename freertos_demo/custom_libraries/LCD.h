@@ -27,6 +27,7 @@ for controlling
 *Includes and defines
 **************************************************************/
 // STD XC8 include
+#include <custom_libraries/CUSTOM_TASK.h>
 #include <inc/tm4c123gh6pm.h>
 
 //#include "mcc_generated_files/mcc.h"
@@ -41,7 +42,6 @@ for controlling
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "UART.h"
-#include "task.h"
 
 #define RS GPIO_PIN_0 //Register Select (Character or Instruction)
 #define EN GPIO_PIN_5 //LCD Clock Enable PIN, Falling Edge Triggered
@@ -65,7 +65,5 @@ void Lcd_Write_String(const char *a);
 void Lcd_Shift_Right(void);
 void Lcd_Shift_Left(void);
 void Lcd_Write_Integer(int v);
-void Lcd_Write_Float(float f);
-void LCDTask(void* );
 
 #endif // LCD_H

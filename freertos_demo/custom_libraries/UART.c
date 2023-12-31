@@ -3,12 +3,11 @@
 
 #include "UART.h"
 
-
 //--------------------------------------------------------------------- Receive_UART: --------------------------------------------------------------------------
 
 void Receive_UART(void)
 {
-   uint8_t i = 0;
+    uint8_t i = 0;
     char receivedChar;
     char msg[MSG_SIZE];
     int charP=0;
@@ -72,7 +71,8 @@ void Receive_UART(void)
     strftime(current_time_str, sizeof(current_time_str), "%Y-%m-%d %H:%M:%S", current_time_info);
 
     Lcd_Clear();
-    Lcd_Write_String(current_time_str);
+    //Lcd_Write_String(current_time_str);
+    Lcd_Write_String(msg);
 
     // Append time string to msg string using sprintf
     //sprintf(msg + strlen(msg), "%s", current_time_str);
@@ -83,48 +83,37 @@ void Receive_UART(void)
     //Store the received message in UART_buffer
     //strncpy(UART_buffer[buffer_head], msg, MSG_SIZE);
 
-    // Store the received message in the circular buffer
-    //StoreInCircularBuffer(msg);
+    num_msgs++;
 
-    //Send msg string to LCD queue (sends every message)
-    //xQueueSend(lcdQueue, UART_buffer[buffer_head], portMAX_DELAY);
+    //Lcd_Write_String(msg);
 
-    //Send a specific msg string to LCD queue (ex: msg no. 5 in buffer)
-
-
-     //xQueueSend(lcdQueue, circularBuffer[5], portMAX_DELAY);
-
+    //Increments buffer head, wraps around when buffer is full (circular buffer)
+    //buffer_head = (buffer_head + 1) % BUFFER_SIZE;
 }
 
 void UART3IntHandler(void)
 {
-
     uint32_t ui32Status;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-    //Get the interrupt status (masked interrupt should be RX type)
-    ui32Status = UARTIntStatus(UART3_BASE, true);
+   //Get the interrupt status (masked interrupt should be RX type)
+   ui32Status = UARTIntStatus(UART3_BASE, true);
 
-    //Clear interrupt flag
-    UARTIntClear(UART3_BASE, ui32Status);
+   //Clear interrupt flag
+   UARTIntClear(UART3_BASE, ui32Status);
 
    //Check if the receive interrupt is triggered (if status matches UART interrupt mask)
    if (ui32Status & UART_INT_RX)
    {
-       Receive_UART();
+       vTaskNotifyGiveFromISR(xUart_Task, &xHigherPriorityTaskWoken);
+
+       Lcd_Clear();
+       //Lcd_Write_String(current_time_str);
+       Lcd_Write_String("ALI");
+       //Receive_UART();
    }
 
-   //portYIELD_FROM_ISR(true);
+   //To prevent the program to get stuck in the ISR
+   portYIELD_FROM_ISR(&xHigherPriorityTaskWoken);
+
 }
-
-void StoreInCircularBuffer(const char *msg)
-{
-    xSemaphoreTake(bufferMutex, portMAX_DELAY);
-
-    strncpy(UART_buffer[buffer_head], msg, MSG_SIZE);
-
-    buffer_head = (buffer_head + 1) % BUFFER_SIZE;
-
-    xSemaphoreGive(bufferMutex);
-}
-
-

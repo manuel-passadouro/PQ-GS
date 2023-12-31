@@ -24,6 +24,7 @@
 #include "queue.h"
 #include "semphr.h"
 #include "TIME.h"
+#include "CUSTOM_TASK.h"
 
 //UART defines
 #define BUFFER_SIZE 20
@@ -35,15 +36,9 @@ extern int buffer_tail;
 extern int num_msgs;
 extern char str_msgs;
 
-
-extern SemaphoreHandle_t bufferMutex;
-
-
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
 void Receive_UART(void);
 void UART3IntHandler(void);
-void StoreInCircularBuffer(const char*);
-
 
 #endif //UART_H

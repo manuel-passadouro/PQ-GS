@@ -22,10 +22,11 @@
 #include "custom_libraries/TMP100.h"
 #include "custom_libraries/TIME.h"
 #include "custom_libraries/INIT_PERIPHERALS.h"
+#include "custom_libraries/CUSTOM_TASK.h"
 #include "driverlib/timer.h"
 
 // The mutex that protects concurrent access of UART from multiple tasks.
-xSemaphoreHandle g_pUARTSemaphore;
+//xSemaphoreHandle g_pUARTSemaphore;
 
 // This hook is called by FreeRTOS when an stack overflow error is detected.
 void vApplicationStackOverflowHook(xTaskHandle *pxTask, char *pcTaskName)
@@ -47,10 +48,13 @@ int num_msgs = 0;
 
 struct tm start_time;
 
-SemaphoreHandle_t bufferMutex;
+//SemaphoreHandle_t bufferMutex;
 
 int main(void)
 {
+    // Create a mutex for protecting shared resources
+    //bufferMutex = xSemaphoreCreateMutex();
+
     //Define the frequency of the Clock
     SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 
@@ -59,17 +63,32 @@ int main(void)
 
     Init_Peripherals();
 
-    /* // Create a mutex for protecting shared resources
-    bufferMutex = xSemaphoreCreateMutex();*/
+    //Create a binary semaphore for protecting shared resources (lcdQueue, in keep message mode)
+    xSemaphore_Keep_Message = xSemaphoreCreateBinary();
 
-    // Create the LCD task
-    xTaskCreate(LCDTask, "LCDTask", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    //Create a binary semaphore for protecting shared resources (lcdQueue, to allow Temperature)
+    xSemaphore_Allow_Temperature = xSemaphoreCreateBinary();
+
+    //Create a mutex semaphore for protecting shared resources (lcdQueue by tmp100, keypad and lcd)
+    xMutex_lcdQueue = xSemaphoreCreateMutex();
+
+    //Create the Lcd task with priority 1 (less priority)
+    //xTaskCreate(Lcd_Task, "Lcd_Task", configMINIMAL_STACK_SIZE, NULL, 2, &xLcd_Task);
+
+    //Create the Keypad task with priority 1 (less priority)
+    //xTaskCreate(Keypad_Task, "Keypad_Task", configMINIMAL_STACK_SIZE, NULL, 1, &xKeypad_Task);
+
+    //Create the Command task with priority 1 (less priority)
+    //xTaskCreate(Command_Task, "Command_Task", configMINIMAL_STACK_SIZE, NULL, 1, &xCommand_Task);
+
+    //Create the Command task with priority 1 (less priority)
+    xTaskCreate(Tmp_Task, "Tmp_Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTmp_Task);
+
+    //Create the Uart task with priority 1 (less priority)
+    xTaskCreate(Uart_Task, "Uart_Task", configMINIMAL_STACK_SIZE, NULL, 1, &xUart_Task);
 
     // Start the scheduler.  This should not return.
     vTaskStartScheduler();
-
-    // In case the scheduler returns for some reason, print an error and loop
-    // forever.
 
     while(1)
     {

@@ -23,10 +23,14 @@ void vApplicationStackOverflowHook(xTaskHandle *pxTask, char *pcTaskName)
 
 // Initialize FreeRTOS and start the initial set of tasks.
 
+
+//UART_buffer declaration
+/*
 char UART_buffer[BUFFER_SIZE][MSG_SIZE];
 int buffer_head;
 int buffer_tail;
 int num_msgs = 0;
+*/
 
 struct tm start_time;
 
@@ -37,8 +41,8 @@ int main(void)
     //Define the frequency of the Clock
     SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
 
-    memset(UART_buffer, 0, sizeof(UART_buffer)); //Init buffer at 0.
-    buffer_head = 0; //Set head of buffer to 0.
+    //memset(UART_buffer, 0, sizeof(UART_buffer)); //Init buffer at 0.
+    //buffer_head = 0; //Set head of buffer to 0.
 
     Init_Peripherals(); //Place in init_task ????
 
@@ -50,14 +54,14 @@ int main(void)
     xMutex_lcdQueue = xSemaphoreCreateMutex();
 
     // Create the initialization task with the highest priority
-    xTaskCreate(Initialization_Task, "Initialization_Task", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, &xinitialization_Task);
+    xTaskCreate(System_Init_Task, "System_Init_Task", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, &xSystem_Init_Task);
 
 
     //Create the Lcd task with low priority
-    //xTaskCreate(Lcd_Task, "Lcd_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xLcd_Task);
+    xTaskCreate(Lcd_Task, "Lcd_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xLcd_Task);
 
     //Create the Keypad task with low priority
-    //xTaskCreate(Keypad_Task, "Keypad_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xKeypad_Task);
+    xTaskCreate(Keypad_Task, "Keypad_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xKeypad_Task);
 
     //Create the Command task with low priority
     //xTaskCreate(Command_Task, "Command_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xCommand_Task);
@@ -66,7 +70,7 @@ int main(void)
     //xTaskCreate(Tmp_Task, "Tmp_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xTmp_Task);
 
     //Create the Uart task with low priority
-    xTaskCreate(Uart_Task, "Uart_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xUart_Task);
+    //xTaskCreate(Uart_Task, "Uart_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xUart_Task);
 
     // Start the scheduler.  This should not return.
     vTaskStartScheduler();

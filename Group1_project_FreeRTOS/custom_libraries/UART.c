@@ -27,8 +27,9 @@ void Receive_UART(void)
         //Waits until one character be ready to be read
         while (!UARTCharsAvail(UART3_BASE));
 
-        //Read a character from UART COM
+        //Read a character from UART3
         receivedChar = UARTCharGet(UART3_BASE);
+        //receivedChar = UARTCharGetNonBlocking(UART3_BASE);
 
         //Checks if it is a 'P' character
         if (receivedChar == 'P')

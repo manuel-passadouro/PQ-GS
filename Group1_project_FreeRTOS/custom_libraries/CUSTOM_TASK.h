@@ -19,6 +19,9 @@
 #include "queue.h"
 #include "task.h"
 #include "semphr.h"
+#include "INIT_PERIPHERALS.h"
+
+#define CMD_MAX_SIZE 4
 
 extern char key[1];
 
@@ -27,11 +30,12 @@ extern TaskHandle_t xLcd_Task;
 extern TaskHandle_t xCommand_Task;
 extern TaskHandle_t xTmp_Task;
 extern TaskHandle_t xUart_Task;
-extern TaskHandle_t xinitialization_Task;
+extern TaskHandle_t xSystem_Init_Task;
 
 //extern SemaphoreHandle_t xSemaphore_Keep_Message;
 extern SemaphoreHandle_t xSemaphore_Allow_Temperature;
 extern SemaphoreHandle_t xMutex_lcdQueue;
+
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
@@ -40,6 +44,9 @@ void Keypad_Task(void *pvParameters);
 void Command_Task(void *pvParameters);
 void Tmp_Task(void *pvParameters);
 void Uart_Task(void *pvParameters);
-void Initialization_Task(void *pvParameters);
+void System_Init_Task(void *pvParameters);
+void Date_Time_Task(void *pvParameters);
+
+void Command_Process(const char *command, bool buzzer_toggle);
 
 #endif // CUSTOM_TASK_H

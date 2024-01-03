@@ -11,14 +11,14 @@ void Init_I2C(void)
     //Set the I2C slave address to TMP100 (0x48)
     I2CMasterSlaveAddrSet(I2C_BASE_ADDR, TMP100_I2C_ADDRESS, false);    //Write
 
-    //Write to config register and set 12-bit mode
+    //Write to configure register and set 12-bit mode
     I2CMasterDataPut(I2C_BASE_ADDR, TMP100_CONFIG_REG);
 
-    //Start burst sequence to send temp data configuration
+    //Start burst sequence to send temperature data configuration
     I2CMasterControl(I2C_BASE_ADDR, I2C_MASTER_CMD_BURST_SEND_START);
     while(I2CMasterBusy(I2C_BASE_ADDR));
 
-    //Set the resolution to 12 bit (0.0625�C)
+    //Set the resolution to 12 bit (0.0625ºC)
     I2CMasterDataPut(I2C_BASE_ADDR, 0x60);
 
     //Finish the burst sequence

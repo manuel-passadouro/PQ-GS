@@ -27,10 +27,9 @@ void Lcd_Task(void *pvParameters)
     while (1)
     {
         // Wait for a message with a timeout of 5 seconds
-        if (xQueueReceive(lcdQueue, MsgToWrite, 5 * configTICK_RATE_HZ) == pdPASS)
+        if(xQueueReceive(lcdQueue, MsgToWrite, TIMEOUT_5) == pdPASS)
         {
             // Message received within the timeout
-            //We have to handle special cases for Date_Time task.
            if((strcmp(MsgToWrite, "C") == 0) || (strcmp(MsgToWrite, "E") == 0)) //These keys always clear LCD.
            {
                Lcd_Clear();
@@ -38,16 +37,18 @@ void Lcd_Task(void *pvParameters)
            else if(strlen(MsgToWrite) > 1) //If msg is cmd output or temp output string, the next letter from keypad should clear the lcd.
            {
                flag_next_key_clear = 1;
-               //Do not clear if special case strings (Date_Time_Task).
                Lcd_Clear();
                Lcd_Write_String(MsgToWrite);
            }
-           else{
+           else
+           {
                if(flag_next_key_clear) //If previous msg was cmd or temp string, key clears LCD.
                {
                    Lcd_Clear();
+
                    flag_next_key_clear = 0;
                }
+
                Lcd_Write_String(MsgToWrite);
            }
         }
@@ -62,8 +63,8 @@ void Lcd_Task(void *pvParameters)
     }
 }
 
-
 //------------------------------------------------------------------- Keypad_Task: -------------------------------------------------------------------
+
 void Keypad_Task(void *pvParameters)
 {
     while(1)
@@ -87,82 +88,6 @@ void Keypad_Task(void *pvParameters)
     }
 }
 
-//------------------------------------------------------------------- Command_Task: -------------------------------------------------------------------
-/*
-void Command_Task(void *pvParameters)
-{
-    char command_buffer[4];
-    char str_null[4];
-    char parameter[MSG_SIZE];
-    int command_buffer_head = 0;
-
-    bool buzzer_toggle = 0;
-
-    //Create a queue for communication between keypad and command tasks
-    commandQueue = xQueueCreate(1, sizeof(char[MSG_SIZE]));
-
-    while (1)
-    {
-        // Wait for a message with a timeout of 5 seconds
-        if (xQueueReceive(commandQueue, parameter, portMAX_DELAY) == pdPASS)
-        {
-            if(strcmp(parameter, "E") == 0)
-            {
-                if((command_buffer[0] == '1') && (command_buffer_head == 1))
-                {
-                    buzzer_toggle = !buzzer_toggle;
-
-                    PWMOutputState(PWM0_BASE, PWM_OUT_6_BIT, buzzer_toggle);
-
-                    if(buzzer_toggle == 1)
-                    {
-                        if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                        {
-                            xQueueOverwrite(lcdQueue, "Buzzer ON!");
-
-                            xSemaphoreGive(xMutex_lcdQueue);
-                        }
-                    }
-                    else
-                    {
-                        if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                        {
-                            xQueueOverwrite(lcdQueue, "Buzzer OFF!");
-
-                            xSemaphoreGive(xMutex_lcdQueue);
-                        }
-                    }
-                }
-                else if(strcmp(command_buffer, "A") == 0)
-                {
-
-                }
-                else
-                {
-                    if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                    {
-                        xQueueOverwrite(lcdQueue, "Invalid Command!");
-
-                        xSemaphoreGive(xMutex_lcdQueue);
-                    }
-                }
-
-                command_buffer_head = 0;
-                strcpy(command_buffer, str_null);
-            }
-            else if (strcmp(parameter, "C") == 0)
-            {
-                command_buffer_head = 0;
-                strcpy(command_buffer, str_null);
-            }
-            else
-            {
-                command_buffer[command_buffer_head++] = parameter[0];
-            }
-        }
-    }
-}
-*/
 //------------------------------------------------------------------- Tmp_Task: -------------------------------------------------------------------
 
 void Tmp_Task(void *pvParameters)
@@ -188,21 +113,17 @@ void Tmp_Task(void *pvParameters)
         //0 = Non blocking check
         if(xSemaphoreTake(xSemaphore_Allow_Temperature, 0) == pdTRUE)
         {
-            //Checks if it get a notification from lcd timeout
-
+            //Checks if it get a notification from LCD timeout
             while(!ulTaskNotifyTake(pdTRUE, portMAX_DELAY))
             {
-                //Get temperature even if it cannot send to LCD yet.
+                //Get temperature even if it cannot send to LCD yet
                 temperature_raw = TMP100_Read();
             }
         }
 
         if(xSemaphoreTake(xMutex_lcdQueue, 0) == pdTRUE)
         {
-
-            //xQueueOverwrite(lcdQueue, "C"); //clear LCD first.
-
-            //Send temperature info lcd queue.
+            //Send temperature info LCD queue.
             xQueueOverwrite(lcdQueue, &temperature);
 
             xSemaphoreGive(xMutex_lcdQueue);
@@ -210,42 +131,38 @@ void Tmp_Task(void *pvParameters)
     }
 }
 
-//------------------------------------------------------------------- Uart_Task: -------------------------------------------------------------------
+//---------------------------------------------------------------------- Uart_Task: -------------------------------------------------------------------
 
 void Uart_Task(void *pvParameters)
 {
-    //Init data structure (UART_buffer)
-
     while(1)
     {
-       //Wait to receive the notification from Keypad ISR
-       ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        //Wait to receive the notification from Keypad ISR
+        if(ulTaskNotifyTake(pdTRUE, TIMEOUT_8) == pdPASS)
+        {
+            Receive_UART();
+        }
+        else
+        {
+            //Timeout occurred, handle it (clear LCD or do something else)
+            Lcd_Clear();
 
-       //Receive_UART();
-       //Test print
-       if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-       {
-           xQueueOverwrite(lcdQueue, "UART Interrupt");
+            Lcd_Write_String("PACKET MISSED! ");
 
-           xSemaphoreGive(xMutex_lcdQueue);
-       }
+            Init_Uart();
+        }
+
     }
 }
 
-//------------------------------------------------------------------- Initialization_Task: -------------------------------------------------------------------
+//------------------------------------------------------------------- System_Init_Task: -------------------------------------------------------------------
 
-void System_Init_Task(void *pvParameters) {
-
-    //Init data structure (UART_buffer)
-
+void System_Init_Task(void *pvParameters)
+{
     //Initialize system peripherals
-
     Init_Peripherals();
 
-    // Enable interrupts globally
-    portENABLE_INTERRUPTS();
-
-    // Suspend the initialization task (it will not run again)
+    //Suspend the initialization task (it will not run again)
     vTaskSuspend(NULL);
 }
 
@@ -254,9 +171,7 @@ void System_Init_Task(void *pvParameters) {
 void Command_Task(void *pvParameters)
 {
     char key_input;
-
-    char cmd_buffer[CMD_MAX_SIZE];
-
+    char cmd_buffer[CMD_MAX_SIZE] = "";
     bool buzzer_toggle = 0;
 
     //Create a queue for communication between keypad and command tasks
@@ -265,55 +180,54 @@ void Command_Task(void *pvParameters)
     while (1)
     {
         // Wait for a message with a timeout of 5 seconds
-        if (xQueueReceive(commandQueue, &key_input , 5 * configTICK_RATE_HZ) == pdPASS)
+        if(xQueueReceive(commandQueue, &key_input , TIMEOUT_5) == pdPASS)
         {
             //If enter is pressed (user has submitted command)
-            if (key_input == 'E')
+            if(key_input == 'E')
             {
-                Command_Process(cmd_buffer, buzzer_toggle);
-                //Clear the command buffer
-                memset(cmd_buffer, 0, sizeof(cmd_buffer));
-            }
-            //If cancel is pressed (user has cancelled input)
-            else if (key_input == 'C'){
-                //Clear the command buffer
-                memset(cmd_buffer, 0, sizeof(cmd_buffer));
-            }
-            else{
-                // Check if there is enough space in the cmd_buffer
-                if ((strlen(cmd_buffer)) < (CMD_MAX_SIZE - 1)) {
-                    // Add the key to the end of the command buffer
-                    cmd_buffer[strlen(cmd_buffer)] = key_input;
-                    cmd_buffer[strlen(cmd_buffer) + 1] = '\0';  // Null-terminate the string
-                }
-                else {
-                    // Handle buffer overflow (write error message to LCD)
-                    if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                    {
-                        xQueueOverwrite(lcdQueue, "command too long!");
+                //Call the Command_Process function store the state of the buzzer
+                buzzer_toggle = Command_Process(cmd_buffer, buzzer_toggle);
 
-                        xSemaphoreGive(xMutex_lcdQueue);
-                    }
-                    memset(cmd_buffer, 0, sizeof(cmd_buffer));
+                //Clear the command buffer
+                memset(cmd_buffer, 0, sizeof(cmd_buffer));
+            }
+            else if(key_input == 'C')
+            {
+                //If cancel is pressed (user has cancelled input)
+                //Clear the command buffer
+                memset(cmd_buffer, 0, sizeof(cmd_buffer));
+            }
+            else
+            {
+                if((strlen(cmd_buffer)) < (CMD_MAX_SIZE - 1))
+                {
+                    //Check if there is enough space in the cmd_buffer
+                    //Add the key to the end of the command buffer
+                    cmd_buffer[strlen(cmd_buffer)] = key_input;
+
+                    //Null character - terminate the string
+                    cmd_buffer[strlen(cmd_buffer) + 1] = '\0';
+                }
+                else
+                {
+                    //Handle buffer overflow (invalidate buffer in case of user write more than 3 character)
+                    cmd_buffer[0] = 'X';
                 }
             }
         }
-
         else
         {
             //Input timeout occurred, clear the command buffer
             memset(cmd_buffer, 0, sizeof(cmd_buffer));
-
         }
     }
 }
 
 //------------------------------------------------------------------- Command_Process: -------------------------------------------------------------------
 
-void Command_Process(const char *cmd_buffer, bool buzzer_toggle)
+bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
 {
-
-    if (strcmp(cmd_buffer, "1") == 0)
+    if(strcmp(cmd_buffer, "1") == 0)
     {
         buzzer_toggle = !buzzer_toggle;
 
@@ -338,103 +252,101 @@ void Command_Process(const char *cmd_buffer, bool buzzer_toggle)
             }
         }
     }
-    else if (strcmp(cmd_buffer, "A") == 0)
+    else if(strcmp(cmd_buffer, "A") == 0)
     {
         //Show number of PQube packets received
         //Test print
         if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
         {
-            xQueueOverwrite(lcdQueue, cmd_buffer);
+            xQueueOverwrite(lcdQueue, "Number Packages: ");
 
             xSemaphoreGive(xMutex_lcdQueue);
         }
     }
-    else if (strcmp(cmd_buffer, "A00") == 0)
+    else if(strcmp(cmd_buffer, "000") == 0)
     {
         //Reset System
 
         //Test print
         if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
         {
-            xQueueOverwrite(lcdQueue, cmd_buffer);
+            xQueueOverwrite(lcdQueue, "Reset System!");
 
             xSemaphoreGive(xMutex_lcdQueue);
         }
     }
-    else if (cmd_buffer[0] == 'B' && (strlen(cmd_buffer) == 3))
+    else if(cmd_buffer[0] == 'B' && (strlen(cmd_buffer) == 3))
     {
         //Show PQcube packet BXX
-        // Extract the packet number part from the command string
+        //Extract the packet number part from the command string
         const char *packet_index_str = &cmd_buffer[1];
 
-        // Convert the indexString to an integer
+        //Convert the indexString to an integer
         int packet_index = atoi(packet_index_str);
 
-        if (packet_index >= 1 && packet_index <= BUFFER_SIZE) {
-
-            //Fetch packet msg data according to selected number
+        if(packet_index >= 1 && packet_index <= BUFFER_SIZE)
+        {
+            //Fetch packet message data according to selected number
             //Example: data = UART_buufer[packet_index - 1][msg_index]
             //Send data to LCD_queue
 
             //Test print
             if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
             {
-                xQueueOverwrite(lcdQueue, cmd_buffer);
+                xQueueOverwrite(lcdQueue, "Package XX: ");
 
                 xSemaphoreGive(xMutex_lcdQueue);
             }
-
         }
-        else {
+        else
+        {
             //Packet number is invalid, write message to LCD
             if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
             {
-                xQueueOverwrite(lcdQueue, "Invalid packet number!");
+                xQueueOverwrite(lcdQueue, "Invalid packet num!");
 
                 xSemaphoreGive(xMutex_lcdQueue);
             }
         }
-
     }
-    else if (cmd_buffer[0] == 'F' && (strlen(cmd_buffer) == 3))
+    else if(cmd_buffer[0] == 'F' && (strlen(cmd_buffer) == 3))
     {
-        //Show PQcube packet BXX
-        // Extract the packet number part from the command string
+        //Show PQcube packet RSSI & SNR FXX
+        //Extract the packet number part from the command string
         const char *packet_index_str = &cmd_buffer[1];
 
         // Convert the indexString to an integer
         int packet_index = atoi(packet_index_str);
 
         //check if requested packet makes sense
-        if (packet_index >= 1 && packet_index <= BUFFER_SIZE) {
-
-            //Fetch packet rssi data according to selected number
-            //Example: data = UART_buufer[packet_index - 1][rssi_index]
+        if (packet_index >= 1 && packet_index <= BUFFER_SIZE)
+        {
+            //Fetch packet RSSI & SNR data according to selected number
+            //Example: data = UART_buufer[packet_index - 1][rssi_snr_index]
             //Send data to LCD_queue
 
             //Test print
             if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
             {
-                xQueueOverwrite(lcdQueue, cmd_buffer);
+                xQueueOverwrite(lcdQueue, "RSSI:   SNR: ");
 
                 xSemaphoreGive(xMutex_lcdQueue);
             }
-
         }
-        else {
+        else
+        {
             //Packet number is invalid, write message to LCD
             if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
             {
-                xQueueOverwrite(lcdQueue, "Invalid packet number!");
+                xQueueOverwrite(lcdQueue, "Invalid Packet Number!");
 
                 xSemaphoreGive(xMutex_lcdQueue);
             }
         }
-
     }
     else
     {
-        //input is not a recognized command
+        //Input is not a recognized command
         if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
         {
             xQueueOverwrite(lcdQueue, "Invalid Command!");
@@ -442,13 +354,16 @@ void Command_Process(const char *cmd_buffer, bool buzzer_toggle)
             xSemaphoreGive(xMutex_lcdQueue);
         }
     }
+
+    return buzzer_toggle;
 }
 
-//------------------------------------------------------------------- Command_Process: -------------------------------------------------------------------
+//------------------------------------------------------------------- Date_Time_Task: -------------------------------------------------------------------
 
 void Date_Time_Task(void *pvParameters)
 {
-    while(1){
+    while(1)
+    {
         /*
         //Get time and date (MM:DD:YYYY hh:mm:ss)
         // Wait for a message with a timeout of 5 seconds

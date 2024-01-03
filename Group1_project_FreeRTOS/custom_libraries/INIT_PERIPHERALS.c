@@ -1,29 +1,28 @@
-
-/* Program Description: Library for interupt configuration for
- * TIVA C (ek-tm4c123gxl) based project. */
-
+//Includes
 #include "INIT_PERIPHERALS.h"
-
 
 //-------------------------------------------------------------------- Init_Peripherals: ------------------------------------------------------------------------
 
 void Init_Peripherals()
 {
     //Enable and wait for the port to be ready for access
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);  //PWM Buzzer (PC4)
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);         //PWM Buzzer (PC4)
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM0));
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC); //LCD EN (PC5)
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);        //LCD EN (PC5)
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOC));
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);//Keypad X (PE2, PE3, PE4, PE5) => (X1, X2, X3, X4) and LCD RS (PE0)
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);        //Keypad X (PE2, PE3, PE4, PE5) => (X1, X2, X3, X4) and LCD RS (PE0)
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOE));
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //Keypad Y (PB0, PB1, PB2, PB3) => (Y1, Y2, Y3, Y4) and LCD Data pins (PB4, PB5, PB6, PB7) => (DB4, DB5, DB6, DB7)
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);        //Keypad Y (PB0, PB1, PB2, PB3) => (Y1, Y2, Y3, Y4) and LCD Data pins (PB4, PB5, PB6, PB7) => (DB4, DB5, DB6, DB7)
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
 
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_WTIMER5); //Init timer5 (32 bit) to count time for UART timestamp
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_WTIMER5);      //Init timer5 (32 bit) to count time for UART timestamp
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_WTIMER5));
+
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART3);        //Enable the UART peripheral
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_UART3));
 
     //Enable interrupts globally
     IntMasterEnable();
@@ -120,22 +119,16 @@ void Init_Tmp100(void)
 
 void Init_Uart()
 {
-
-   GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_6 | GPIO_PIN_7);
-
    //Configure the UART pins (PC6 and PC7)
    GPIOPinConfigure(GPIO_PC6_U3RX);
    GPIOPinConfigure(GPIO_PC7_U3TX);
 
-   //Enable the UART peripheral
-   SysCtlPeripheralEnable(SYSCTL_PERIPH_UART3);
-   while(!SysCtlPeripheralReady(SYSCTL_PERIPH_UART3)) {}
+   GPIOPinTypeUART(GPIO_PORTC_BASE, GPIO_PIN_6 | GPIO_PIN_7);
 
    //Configure UART with a baud rate of 9600, 8-bit data, no parity, and one stop bit
    UARTConfigSetExpClk(UART3_BASE, SysCtlClockGet(), 9600, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
 
-   // Enable UART3 interrupt with a priority appropriate for your application
-   //IntPrioritySet(INT_UART3, YOUR_UART_INTERRUPT_PRIORITY);
+   //Enable UART3 interrupt with a priority appropriate for your application
    IntEnable(INT_UART3);
    UARTIntRegister(UART3_BASE, UART3IntHandler);
    UARTIntEnable(UART3_BASE, UART_INT_RX);

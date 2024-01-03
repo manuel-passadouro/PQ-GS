@@ -22,8 +22,6 @@
 #define TMP100_TEMP_REG 0x00
 #define MAX_STRING_LENGTH 10
 
-//extern char temperature_array[20];
-
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
 void Init_I2C(void);

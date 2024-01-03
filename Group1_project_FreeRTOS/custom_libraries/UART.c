@@ -1,16 +1,15 @@
-/* Program Description: UART library for TIVA C
- * devboard (ek-tm4c123gxl) communication with pqube board. */
-
+//Includes
 #include "UART.h"
+
+struct packet UART_buffer[BUFFER_SIZE];
 
 //--------------------------------------------------------------------- Receive_UART: --------------------------------------------------------------------------
 
 void Receive_UART(void)
 {
-    uint8_t i = 0;
+    uint8_t count = 0;
     char receivedChar;
     char msg[MSG_SIZE];
-    int charP=0;
 
     uint64_t timestamp;
     time_t current_time_t;
@@ -22,75 +21,73 @@ void Receive_UART(void)
 
     char current_time_str[20];
 
-    while (i < MSG_SIZE - 1)
+    while (count < MSG_SIZE - 1)
     {
         //Waits until one character be ready to be read
         while (!UARTCharsAvail(UART3_BASE));
 
         //Read a character from UART3
         receivedChar = UARTCharGet(UART3_BASE);
-        //receivedChar = UARTCharGetNonBlocking(UART3_BASE);
-
-        //Checks if it is a 'P' character
-        if (receivedChar == 'P')
-        {
-            charP = 1;
-        }
 
         //Checks if it is a terminal character
         if (receivedChar == '\n' || receivedChar == '\r')
         {
-            charP = 0;
+            //Add a null character at the end of string
+            msg[count++] = '\0';
             break;
         }
-
-        //Stores the character in the buffer
-        if(charP == 1)
+        else
         {
-            msg[i++] = receivedChar;
+            msg[count++] = receivedChar;
         }
     }
 
-    start_time = getTime(); //Store start time (set manually in TIME.h).
+    sscanf(msg, "%19[^,],%19[^;];%19[^\0]\0", UART_buffer[0].PQ_ID, UART_buffer[0].SENSORS, UART_buffer[0].LEN_RSSI_SNR);
 
-    // Get the current timestamp from the system timer
-    timestamp = TimerValueGet(WTIMER5_BASE, TIMER_A);
+    xQueueOverwrite(lcdQueue, UART_buffer[0].PQ_ID);
+    vTaskDelay(2000);
+    xQueueOverwrite(lcdQueue, UART_buffer[0].SENSORS);
+    vTaskDelay(2000);
+    xQueueOverwrite(lcdQueue, UART_buffer[0].LEN_RSSI_SNR);
+    vTaskDelay(2000);
 
-    // Calculate elapsed seconds using clock frequency
+    //Store start time (set manually in TIME.h)
+    start_time = getTime();
+
+    //Get the current timestamp from the system timer
+    timestamp = TimerValueGet64(WTIMER5_BASE);
+
+    //Calculate elapsed seconds using clock frequency
     raw_time_t =  (time_t)((timestamp / SysCtlClockGet()));
 
-    // Convert start_time to time_t format for calculations (returns the value in seconds!)
+    //Convert start_time to time_t format for calculations (returns the value in seconds!)
     start_time_t = mktime(&start_time);
 
-    // Calculate the current time as time_t
+    //Calculate the current time as time_t
     current_time_t = start_time_t + raw_time_t;
 
-    // Convert time in time_t to standard C time format
+    //Convert time in time_t to standard C time format
     current_time_info = localtime(&current_time_t);
 
-    // Convert from standard C time format to string
+    //Convert from standard C time format to string
     strftime(current_time_str, sizeof(current_time_str), "%Y-%m-%d %H:%M:%S", current_time_info);
-
-    Lcd_Clear();
-    //Lcd_Write_String(current_time_str);
-    Lcd_Write_String(msg);
 
     // Append time string to msg string using sprintf
     //sprintf(msg + strlen(msg), "%s", current_time_str);
 
     // Add a null character at the end of string
-    msg[sizeof(msg) - 1] = '\0';
+    //msg[sizeof(msg) - 1] = '\0';
 
     //Store the received message in UART_buffer
     //strncpy(UART_buffer[buffer_head], msg, MSG_SIZE);
 
-    num_msgs++;
-
-    //Lcd_Write_String(msg);
+    //num_msgs++;
 
     //Increments buffer head, wraps around when buffer is full (circular buffer)
     //buffer_head = (buffer_head + 1) % BUFFER_SIZE;
 }
+
+//--------------------------------------------------------------------- UART3IntHandler: --------------------------------------------------------------------------
 
 void UART3IntHandler(void)
 {
@@ -110,6 +107,5 @@ void UART3IntHandler(void)
    }
 
    //To prevent the program to get stuck in the ISR
-   portYIELD_FROM_ISR(&xHigherPriorityTaskWoken);
-
+   portYIELD_FROM_ISR(true);
 }

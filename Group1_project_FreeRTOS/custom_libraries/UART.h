@@ -1,7 +1,5 @@
 #ifndef UART_H
 #define UART_H
-/* Program Description: UART library for TIVA C
- * devboard (ek-tm4c123gxl) communication with pqube board. */
 
 //Includes
 #include <stdint.h>
@@ -27,14 +25,21 @@
 #include "CUSTOM_TASK.h"
 
 //UART defines
-#define BUFFER_SIZE 20
+#define BUFFER_SIZE 10
 #define MSG_SIZE 100
+#define NUM_PACKET_STRS 4
 
-extern char UART_buffer[BUFFER_SIZE][MSG_SIZE];
-extern int buffer_head;
-extern int buffer_tail;
+extern struct packet UART_buffer[BUFFER_SIZE];
 extern int num_msgs;
-extern char str_msgs;
+
+struct packet
+{
+    char PQ_ID[20];
+    char SENSORS[20];
+    char LEN_RSSI_SNR[20];
+    char TIMESTAMP[20];
+    char RSSI_SNR[20];
+};
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 

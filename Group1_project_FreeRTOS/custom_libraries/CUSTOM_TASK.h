@@ -1,6 +1,5 @@
 #ifndef CUSTOM_TASK_H
 #define CUSTOM_TASK_H
-/* Program Description: Data and time library for tiva c based project.*/
 
 //Includes
 #include <stdint.h>
@@ -21,7 +20,11 @@
 #include "semphr.h"
 #include "INIT_PERIPHERALS.h"
 
+//CUSTOM TASK defines
 #define CMD_MAX_SIZE 4
+#define TIMEOUT_5 5*configTICK_RATE_HZ
+#define TIMEOUT_7 7*configTICK_RATE_HZ
+#define TIMEOUT_8 8*configTICK_RATE_HZ
 
 extern char key[1];
 
@@ -32,10 +35,8 @@ extern TaskHandle_t xTmp_Task;
 extern TaskHandle_t xUart_Task;
 extern TaskHandle_t xSystem_Init_Task;
 
-//extern SemaphoreHandle_t xSemaphore_Keep_Message;
 extern SemaphoreHandle_t xSemaphore_Allow_Temperature;
 extern SemaphoreHandle_t xMutex_lcdQueue;
-
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
@@ -47,6 +48,6 @@ void Uart_Task(void *pvParameters);
 void System_Init_Task(void *pvParameters);
 void Date_Time_Task(void *pvParameters);
 
-void Command_Process(const char *command, bool buzzer_toggle);
+bool Command_Process(const char *command, bool buzzer_toggle);
 
 #endif // CUSTOM_TASK_H

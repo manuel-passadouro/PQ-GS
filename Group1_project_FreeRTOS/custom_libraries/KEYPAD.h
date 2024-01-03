@@ -1,8 +1,5 @@
 #ifndef KEYPAD_H
 #define KEYPAD_H
-/* Program Description: Library for interupt configuration for
- * TIVA C (ek-tm4c123gxl) based project. */
-
 
 //Includes
 #include <stdint.h>
@@ -20,8 +17,7 @@
 #include "queue.h"
 #include "task.h"
 
-
-//Some defines to help understanding the code :)
+//Some KEYPAD defines to help understanding the code :)
 #define GPIO_PIN_ALL 0b1111
 #define ON 0x01
 #define OFF 0x00
@@ -39,6 +35,5 @@ extern char key[1];
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
 void PortEIntHandler(void);
-
 
 #endif //Interrupts_H

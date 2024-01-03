@@ -30,6 +30,7 @@ void Lcd_Task(void *pvParameters)
         if (xQueueReceive(lcdQueue, MsgToWrite, 5 * configTICK_RATE_HZ) == pdPASS)
         {
             // Message received within the timeout
+            //We have to handle special cases for Date_Time task.
            if((strcmp(MsgToWrite, "C") == 0) || (strcmp(MsgToWrite, "E") == 0)) //These keys always clear LCD.
            {
                Lcd_Clear();
@@ -37,6 +38,7 @@ void Lcd_Task(void *pvParameters)
            else if(strlen(MsgToWrite) > 1) //If msg is cmd output or temp output string, the next letter from keypad should clear the lcd.
            {
                flag_next_key_clear = 1;
+               //Do not clear if special case strings (Date_Time_Task).
                Lcd_Clear();
                Lcd_Write_String(MsgToWrite);
            }

@@ -22,6 +22,8 @@
 
 //CUSTOM TASK defines
 #define CMD_MAX_SIZE 4
+#define DATE_MAX_SIZE 11
+#define TIME_MAX_SIZE 9
 #define TIMEOUT_5 5*configTICK_RATE_HZ
 #define TIMEOUT_7 7*configTICK_RATE_HZ
 #define TIMEOUT_8 8*configTICK_RATE_HZ
@@ -49,5 +51,7 @@ void System_Init_Task(void *pvParameters);
 void Date_Time_Task(void *pvParameters);
 
 bool Command_Process(const char *command, bool buzzer_toggle);
+bool Date_Process(const char *date_buffer)
+bool Time_Process(const char *time_buffer)
 
 #endif // CUSTOM_TASK_H

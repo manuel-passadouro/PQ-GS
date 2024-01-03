@@ -14,6 +14,8 @@ TaskHandle_t xSystem_Init_Task;
 SemaphoreHandle_t xSemaphore_Allow_Temperature;
 SemaphoreHandle_t xMutex_lcdQueue;
 
+int flag_next_key_clear = 0;
+
 //------------------------------------------------------------------- Lcd_Task: -------------------------------------------------------------------
 
 void Lcd_Task(void *pvParameters)
@@ -175,7 +177,7 @@ void Command_Task(void *pvParameters)
     bool buzzer_toggle = 0;
 
     //Create a queue for communication between keypad and command tasks
-    commandQueue = xQueueCreate(1, sizeof(char));
+    commandQueue = xQueueCreate(1, sizeof(char)); //Already created in Date_Time_Task
 
     while (1)
     {
@@ -362,52 +364,114 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
 
 void Date_Time_Task(void *pvParameters)
 {
-    while(1)
+    //Create a queue for communication between keypad and command tasks
+    commandQueue = xQueueCreate(1, sizeof(char)); //This queue will be used by command_task after start-up
+    char date_buffer[DATE_MAX_SIZE] = "";
+    char time_buffer[TIME_MAX_SIZE] = "";
+    char key_input;
+    bool date_ok;
+    bool time_ok;
+
+    while (1)
     {
-        /*
-        //Get time and date (MM:DD:YYYY hh:mm:ss)
-        // Wait for a message with a timeout of 5 seconds
-        if (xQueueReceive(commandQueue, &key_input , 5 * configTICK_RATE_HZ) == pdPASS)
+        //Write Initial message (LCD must be running)
+        if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
         {
-            //If enter is pressed (user has submitted command)
-            if (key_input == 'E')
+            xQueueOverwrite(lcdQueue, "Date? MM/DD/YYYY");
+
+            xSemaphoreGive(xMutex_lcdQueue);
+        }
+        //Start time loop
+        while(1)
+        {
+            //Start date loop
+            while(1)
             {
-                Command_Process(cmd_buffer, buzzer_toggle);
-                //Clear the command buffer
-                memset(cmd_buffer, 0, sizeof(cmd_buffer));
-            }
-            //If cancel is pressed (user has cancelled input)
-            else if (key_input == 'C'){
-                //Clear the command buffer
-                memset(cmd_buffer, 0, sizeof(cmd_buffer));
-            }
-            else{
-                // Check if there is enough space in the cmd_buffer
-                if ((strlen(cmd_buffer)) < (CMD_MAX_SIZE - 1)) {
-                    // Add the key to the end of the command buffer
-                    cmd_buffer[strlen(cmd_buffer)] = key_input;
-                    cmd_buffer[strlen(cmd_buffer) + 1] = '\0';  // Null-terminate the string
-                }
-                else {
-                    // Handle buffer overflow (write error message to LCD)
-                    if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
+                // Wait for a message with a timeout of 5 seconds
+                if(xQueueReceive(commandQueue, &key_input , TIMEOUT_5) == pdPASS)
+                {
+                    //If enter is pressed (user has submitted command)
+                    if(key_input == 'E')
                     {
-                        xQueueOverwrite(lcdQueue, "command too long!");
+                        //Call the Date_Process function store t
+                        date_ok = Date_Process(date_buffer);
 
-                        xSemaphoreGive(xMutex_lcdQueue);
+                        //Clear the command buffer
+                        memset(date_buffer, 0, sizeof(date_buffer));
+
+                        //if date ok, exit date loop
+                        if(date_ok){
+                            break;
+                        }
+                        //if date not ok, print error msg and stay in date loop.
+                        else{
+                            //Clear the date buffer
+                            memset(date_buffer, 0, sizeof(date_buffer));
+                            if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
+                            {
+                                xQueueOverwrite(lcdQueue, "Invalid Date!");
+
+                                xSemaphoreGive(xMutex_lcdQueue);
+                            }
+                            //Delay so user can see error message
+                            vTaskDelay(3000);
+
+                            //Write Initial message again
+                            if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
+                            {
+                                xQueueOverwrite(lcdQueue, "Date? MM/DD/YYYY");
+
+                                xSemaphoreGive(xMutex_lcdQueue);
+                            }
+                        }
                     }
-                    memset(cmd_buffer, 0, sizeof(cmd_buffer));
+                    else if(key_input == 'C')
+                    {
+                        //If cancel is pressed (user has cancelled input)
+                        //Clear the command buffer
+                        memset(date_buffer, 0, sizeof(date_buffer));
+
+                        //Write Initial message again
+                        if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
+                        {
+                            xQueueOverwrite(lcdQueue, "Date? MM/DD/YYYY");
+
+                            xSemaphoreGive(xMutex_lcdQueue);
+                        }
+                    }
+                    else
+                    {
+                        //replace "A" with "/" because keypad has no "/".
+                        if(key_input == 'A'){
+                            key_input = '/';
+                        }
+                        if((strlen(cmd_buffer)) < (CMD_MAX_SIZE - 1))
+                        {
+                            //Check if there is enough space in the cmd_buffer
+                            //Add the key to the end of the command buffer
+                            date_buffer[strlen(date_buffer)] = key_input;
+
+                            //Null character - terminate the string
+                            date_buffer[strlen(date_buffer) + 1] = '\0';
+                        }
+                        else
+                        {
+                            //Handle buffer overflow (invalidate buffer in case of user write more than 3 character)
+                            date_buffer[0] = 'X';
+                        }
+
+                    }
+
                 }
+                else
+                {
+                    //Input timeout occurred, clear the command buffer
+                    memset(date_buffer, 0, sizeof(date_buffer));
+                }
+
             }
-        }
-
-        else
-        {
-            //Input timeout occurred, clear the command buffer
-            memset(cmd_buffer, 0, sizeof(cmd_buffer));
 
         }
-
 
         //THIS NEED TO COME AFTER THE DATE IS ENTERED
         //This task runs only once, after its done it creates the remaining tasks, thus completing system init.
@@ -421,10 +485,19 @@ void Date_Time_Task(void *pvParameters)
         //Create the Uart task with low priority
         xTaskCreate(Uart_Task, "Uart_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xUart_Task);
 
+        //Set flag to warn LCD_task of task completion (use binary semaphore?)
+        //Time_Date_Task_Done = 1;
+
         // Suspend the task (it will not run again)
         vTaskSuspend(NULL);
-        */
+
     }
 
 }
 
+//------------------------------------------------------------------- Date_Process: -------------------------------------------------------------------
+
+void Date_Process(const char *date_buffer)
+{
+
+}

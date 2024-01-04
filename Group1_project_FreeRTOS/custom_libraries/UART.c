@@ -3,7 +3,6 @@
 
 struct packet UART_buffer[BUFFER_SIZE];
 int num_msgs;
-//uint8_t buffer_head;
 
 //--------------------------------------------------------------------- Receive_UART: --------------------------------------------------------------------------
 
@@ -20,6 +19,7 @@ uint8_t Receive_UART(uint8_t buffer_head)
     char snr[5];
     char rssi_text[20] = "RSSI: ";
     char snr_text[20] = " SNR: ";
+    char current_time_str[20];
 
     bool charP = 0;
     uint8_t i = 0;
@@ -29,10 +29,10 @@ uint8_t Receive_UART(uint8_t buffer_head)
     time_t raw_time_t;
     time_t start_time_t;
 
-    //struct tm start_time;
     struct tm *current_time_info;
 
-    char current_time_str[20];
+    //Clear msg buffer
+    memset(msg, 0, sizeof(msg));
 
     while (count < MSG_SIZE - 1)
     {
@@ -50,12 +50,12 @@ uint8_t Receive_UART(uint8_t buffer_head)
 
         //Checks if it is a terminal character
         if (receivedChar == '\n' || receivedChar == '\r')
-        //if (receivedChar == '\n')
         {
-            charP = 0;
             // Add a null character at the end of string
             msg[sizeof(msg) - 1] = '\0';
+
             vTaskDelay(10);
+
             break;
         }
 
@@ -72,12 +72,8 @@ uint8_t Receive_UART(uint8_t buffer_head)
         char discard = UARTCharGet(UART3_BASE);
     }
 
-    /*
-    if(!strcmp(msg, "")){
-       // msg[sizeof(msg) - 1] = '\0';
-        return buffer_head;
-    }
-    */
+    // Add a null character at the end of string
+    msg[sizeof(msg) - 1] = '\0';
 
     //Parse and store received message to UART_buffer (protected with semaphore)
     //Check if empty?
@@ -131,19 +127,6 @@ uint8_t Receive_UART(uint8_t buffer_head)
 
     strcpy(UART_buffer[buffer_head].TIMESTAMP, current_time_str);
 
-    /*
-    if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-    {
-       xQueueOverwrite(lcdQueue, UART_buffer[buffer_head].PQ_ID);
-       vTaskDelay(1000);
-       xQueueOverwrite(lcdQueue, UART_buffer[buffer_head].SENSORS_PREQUELA);
-       vTaskDelay(1000);
-       xQueueOverwrite(lcdQueue, UART_buffer[buffer_head].SENSORS_SEQUELA);
-
-       xSemaphoreGive(xMutex_lcdQueue);
-    }
-   */
-
     //Increments buffer head, wraps around when buffer is full (circular buffer)
     buffer_head = (buffer_head + 1) % BUFFER_SIZE;
 
@@ -154,8 +137,6 @@ uint8_t Receive_UART(uint8_t buffer_head)
         xSemaphoreGive(xMutex_Access_Num_Msgs);
     }
 
-    //Clear msg buffer
-    memset(msg, 0, sizeof(msg));
     return buffer_head;
 }
 

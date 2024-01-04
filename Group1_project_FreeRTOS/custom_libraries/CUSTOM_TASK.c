@@ -116,7 +116,7 @@ void Tmp_Task(void *pvParameters)
         vTaskDelay(2000);
 
         //Convert the float value of the reading to an array to show in LCD later
-        FloatToArray(temperature_raw, temperature_array, 3);
+        FloatToArray(temperature_raw, temperature_array, 1);
 
         snprintf(temperature + strlen(temperature),sizeof(temperature), "%s", temperature_array);
         snprintf(temperature + strlen(temperature),sizeof(temperature), "%s", units);
@@ -131,14 +131,8 @@ void Tmp_Task(void *pvParameters)
                 temperature_raw = TMP100_Read();
             }
         }
-
-        if(xSemaphoreTake(xMutex_lcdQueue, 0) == pdTRUE)
-        {
-            //Send temperature info LCD queue.
-            xQueueOverwrite(lcdQueue, &temperature);
-
-            xSemaphoreGive(xMutex_lcdQueue);
-        }
+        //Send temperature info LCD queue.
+        xQueueOverwrite(lcdQueue, &temperature);
     }
 }
 
@@ -150,16 +144,28 @@ void Uart_Task(void *pvParameters)
 
     num_msgs = 0;
 
+    //Init_Uart(); //Make sure UART is working at start up
+
     while(1)
     {
         //Wait to receive the notification from Keypad ISR
         if(ulTaskNotifyTake(pdTRUE, TIMEOUT_20) == pdPASS)
         {
             buffer_head = Receive_UART(buffer_head);
-            vTaskDelay(1000);
+            //vTaskDelay(1000);
         }
         else
         {
+            //Reset UART module if too much time since last interrupt (when PQ resets for ex.)
+
+            if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
+            {
+                //Send temperature info LCD queue.
+                xQueueOverwrite(lcdQueue, "UART Reset!");
+
+                xSemaphoreGive(xMutex_lcdQueue);
+            }
+
             Init_Uart();
         }
 
@@ -186,21 +192,34 @@ void System_Init_Task(void *pvParameters)
         strcpy(UART_buffer[i].RSSI_SNR, "");
     }
 
+    //Create a binary semaphore for protecting shared resources (lcdQueue, to allow Temperature)
+    xSemaphore_Allow_Temperature = xSemaphoreCreateBinary();
+
+    //Create a mutex semaphore for protecting shared resources (lcdQueue, to Access UART Buffer)
+    xMutex_Access_UART_Buffer = xSemaphoreCreateMutex();
+
+    //Create a mutex semaphore for protecting shared resources (lcdQueue, to Access UART Buffer)
+    xMutex_Access_Num_Msgs = xSemaphoreCreateMutex();
+
+    //Create a mutex semaphore for protecting shared resources (lcdQueue by tmp100, keypad and lcd)
+    xMutex_lcdQueue = xSemaphoreCreateMutex();
+
     //Create necessary start-up tasks (LCD, Keypad and Date_Time)
     //Create the Lcd task with low priority
-    xTaskCreate(Lcd_Task, "Lcd_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xLcd_Task);
+    xTaskCreate(Lcd_Task, "Lcd_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, &xLcd_Task);
 
     //Create the Keypad task with low priority
-    xTaskCreate(Keypad_Task, "Keypad_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xKeypad_Task);
+    xTaskCreate(Keypad_Task, "Keypad_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, &xKeypad_Task);
 
     //Create the Keypad task with low priority
     xTaskCreate(Date_Time_Task, "Date_Time_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xDate_Time_Task);
 
+
+    /*
     //Wait for Date_Time_task notification
-    if(ulTaskNotifyTake(pdTRUE, TIMEOUT_20) == pdPASS)
+    if(ulTaskNotifyTake(pdTRUE, portMAX_DELAY) == pdPASS)
     {
-        //Store start time (set manually in TIME.h)
-        start_time = getTime();
+
     }
     else
     {
@@ -211,19 +230,30 @@ void System_Init_Task(void *pvParameters)
 
         start_time = getTime();
     }
+    */
 
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    vTaskSuspend(xDate_Time_Task);
+    //Store start time (set manually in TIME.h)
+    //start_time = getTime();
+
+    //Init rest of stuff that the other tasks need
+    Init_Buzzer();
+    Init_Tmp100();
+    Init_Uart();
+    Init_Timer();
 
     //Create the Command task with low priority
-    xTaskCreate(Command_Task, "Command_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xCommand_Task);
+    xTaskCreate(Command_Task, "Command_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, &xCommand_Task);
 
     //Create the Command task with low priority
     xTaskCreate(Tmp_Task, "Tmp_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xTmp_Task);
 
     //Create the Uart task with low priority
-    xTaskCreate(Uart_Task, "Uart_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xUart_Task);
+    xTaskCreate(Uart_Task, "Uart_Task", configMINIMAL_STACK_SIZE + 200, NULL, tskIDLE_PRIORITY + 2, &xUart_Task);
 
-    //Set flag to warn LCD_task of task completion (use binary semaphore?)
-    //Time_Date_Task_Done = 1;
+    xQueueOverwrite(lcdQueue, "Sys Init DONE!");
 
     //Suspend the initialization task (it will not run again)
     vTaskSuspend(NULL);
@@ -299,23 +329,24 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
 
         PWMOutputState(PWM0_BASE, PWM_OUT_6_BIT, buzzer_toggle);
 
+        //Buzzer ON/OFF
         if(buzzer_toggle == 1)
         {
-            if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-            {
+            //if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
+            //{
                 xQueueOverwrite(lcdQueue, "Buzzer ON!");
 
-                xSemaphoreGive(xMutex_lcdQueue);
-            }
+              //  xSemaphoreGive(xMutex_lcdQueue);
+            //}
         }
         else
         {
-            if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-            {
+            //if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
+            //{
                 xQueueOverwrite(lcdQueue, "Buzzer OFF!");
 
-                xSemaphoreGive(xMutex_lcdQueue);
-            }
+              //  xSemaphoreGive(xMutex_lcdQueue);
+            //}
         }
     }
     else if(strcmp(cmd_buffer, "A") == 0)
@@ -331,6 +362,7 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
             xSemaphoreGive(xMutex_Access_Num_Msgs);
         }
 
+        //Rearrange the string to show the number of packets received
         snprintf(num_msgs_str + strlen(num_msgs_str),sizeof(num_msgs_str), "%s", num_msgs_str_aux);
 
         //Send number of received packets to LCD
@@ -356,35 +388,15 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
     else if(cmd_buffer[0] == 'B' && (strlen(cmd_buffer) == 3))
     {
         //Show PQcube packet BXX
+
         //Extract the packet number part from the command string
         const char *packet_index_str = &cmd_buffer[1];
-        /*
-        char PQ_ID_aux[9];
-        char SENSORS_PREQUELA_aux[19];
-        char SENSORS_SEQUELA_aux[6];
-        char LEN_RSSI_SNR_aux[15];
-        char TIMESTAMP_aux[20];
-        */
 
         //Convert the indexString to an integer
         int packet_index = atoi(packet_index_str);
 
         if(packet_index >= 1 && packet_index <= BUFFER_SIZE)
         {
-            //Fetch data from UART buffer
-            /*
-            if(xSemaphoreTake(xMutex_Access_UART_Buffer, portMAX_DELAY) == pdTRUE)
-            {
-               strcpy(PQ_ID_aux, UART_buffer[0].PQ_ID);
-               strcpy(SENSORS_PREQUELA_aux, UART_buffer[0].SENSORS_PREQUELA);
-               strcpy(SENSORS_SEQUELA_aux, UART_buffer[0].SENSORS_SEQUELA);
-               strcpy(LEN_RSSI_SNR_aux, UART_buffer[0].LEN_RSSI_SNR);
-               strcpy(TIMESTAMP_aux, UART_buffer[0].TIMESTAMP);
-
-               xSemaphoreGive(xMutex_Access_UART_Buffer);
-            }
-           */
-
             //Check if requested packet is empty
             if(xSemaphoreTake(xMutex_Access_UART_Buffer, portMAX_DELAY) == pdTRUE)
             {
@@ -392,16 +404,18 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
                 {
                     if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
                     {
-                        xQueueOverwrite(lcdQueue, "Packet Empty!");
+                        xQueueOverwrite(lcdQueue, "Packet doesn't exist");
                         xSemaphoreGive(xMutex_lcdQueue);
                     }
+
                     //We have to give semaphore if it enters the condition or not.
                     xSemaphoreGive(xMutex_Access_UART_Buffer);
+
                     return buzzer_toggle;
                 }
+
                 xSemaphoreGive(xMutex_Access_UART_Buffer);
             }
-
 
             //Send data to LCD (We shouldn't be able to write commands while its showing the packet content)
             if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
@@ -413,8 +427,10 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
                 if(xSemaphoreTake(xMutex_Access_UART_Buffer, portMAX_DELAY) == pdTRUE)
                 {
                     xQueueOverwrite(lcdQueue, UART_buffer[packet_index - 1].PQ_ID);
+
                     xSemaphoreGive(xMutex_Access_UART_Buffer);
                 }
+
                 //Display for 2 seconds or skip if any key is pressed.
                 xQueueReceive(skip_msg_Queue, NULL , TIMEOUT_2) == pdPASS;
 
@@ -422,8 +438,10 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
                 if(xSemaphoreTake(xMutex_Access_UART_Buffer, portMAX_DELAY) == pdTRUE)
                 {
                     xQueueOverwrite(lcdQueue, UART_buffer[packet_index - 1].SENSORS_PREQUELA);
+
                     xSemaphoreGive(xMutex_Access_UART_Buffer);
                 }
+
                 //Display for 2 seconds or skip if any key is pressed.
                 xQueueReceive(skip_msg_Queue, NULL , TIMEOUT_2) == pdPASS;
 
@@ -431,8 +449,10 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
                 if(xSemaphoreTake(xMutex_Access_UART_Buffer, portMAX_DELAY) == pdTRUE)
                 {
                     xQueueOverwrite(lcdQueue, UART_buffer[packet_index - 1].SENSORS_SEQUELA);
+
                     xSemaphoreGive(xMutex_Access_UART_Buffer);
                 }
+
                 //Display for 2 seconds or skip if any key is pressed.
                 xQueueReceive(skip_msg_Queue, NULL , TIMEOUT_2) == pdPASS;
 
@@ -440,8 +460,10 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
                 if(xSemaphoreTake(xMutex_Access_UART_Buffer, portMAX_DELAY) == pdTRUE)
                 {
                     xQueueOverwrite(lcdQueue, UART_buffer[packet_index - 1].LEN_RSSI_SNR);
+
                     xSemaphoreGive(xMutex_Access_UART_Buffer);
                 }
+
                 //Display for 2 seconds or skip if any key is pressed.
                 xQueueReceive(skip_msg_Queue, NULL , TIMEOUT_2) == pdPASS;
 
@@ -449,17 +471,13 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
                 if(xSemaphoreTake(xMutex_Access_UART_Buffer, portMAX_DELAY) == pdTRUE)
                 {
                     xQueueOverwrite(lcdQueue, UART_buffer[packet_index - 1].TIMESTAMP);
+
                     xSemaphoreGive(xMutex_Access_UART_Buffer);
                 }
                 //Display for 2 seconds or skip if any key is pressed.
                 xQueueReceive(skip_msg_Queue, NULL , TIMEOUT_2) == pdPASS;
 
-                //Fetch packet message data according to selected number (protect UART_buffer)
-                if(xSemaphoreTake(xMutex_Access_UART_Buffer, portMAX_DELAY) == pdTRUE)
-                {
-                    xQueueOverwrite(lcdQueue, UART_buffer[packet_index - 1].RSSI_SNR);
-                    xSemaphoreGive(xMutex_Access_UART_Buffer);
-                }
+                xQueueOverwrite(lcdQueue, "C");
 
                 xSemaphoreGive(xMutex_lcdQueue);
             }
@@ -531,30 +549,32 @@ bool Command_Process(const char *cmd_buffer, bool buzzer_toggle)
 
 void Date_Time_Task(void *pvParameters)
 {
-    //Create a queue for communication between keypad and command tasks
-    commandQueue = xQueueCreate(1, sizeof(char)); //This queue will be used by command_task after start-up
     char date_buffer[DATE_MAX_SIZE] = "";
     char time_buffer[TIME_MAX_SIZE] = "";
     char key_input;
-    bool date_ok;
-    bool time_ok;
+    bool date_ok = false;
+    bool time_ok = false;
+    bool flag_time_repeat = false;
+
+    //Create a queue for communication between keypad and command tasks
+    commandQueue = xQueueCreate(1, sizeof(char)); //This queue will be used by command_task after start-up
+
+    //Create a queue for communication between keypad and command tasks
+    skip_msg_Queue = xQueueCreate(1, sizeof(char));
 
     while (1)
     {
         //Write Initial message (LCD must be running)
-        if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-        {
-            xQueueOverwrite(lcdQueue, "Date? MM/DD/YYYY");
 
-            xSemaphoreGive(xMutex_lcdQueue);
-        }
+        xQueueOverwrite(lcdQueue, "Date? MM/DD/YYYY");
+
         //Start time loop
         while(1)
         {
             //Start date loop
             while(!date_ok)
             {
-                // Wait for a message with a timeout of 5 seconds
+                //Wait for a message with a timeout of 5 seconds
                 if(xQueueReceive(commandQueue, &key_input , TIMEOUT_5) == pdPASS)
                 {
                     //If enter is pressed (user has submitted command)
@@ -563,17 +583,20 @@ void Date_Time_Task(void *pvParameters)
                         //Call the Date_Process function and store date if valid.
                         date_ok = Date_Process(date_buffer);
 
-                        //Clear the command buffer
+                        //Clear the date_buffer
                         memset(date_buffer, 0, sizeof(date_buffer));
 
-                        //if date ok, exit date loop
-                        if(date_ok){
+                        //if date_ok == 1, the user entered a valid date and the program can exit date loop
+                        if(date_ok == 1)
+                        {
                             break;
                         }
-                        //if date not ok, print error msg and stay in date loop.
-                        else{
-                            //Clear the date buffer
+                        else //if date not ok, print error msg and stay in date loop.
+                        {
+                            //Clear the date_buffer
                             memset(date_buffer, 0, sizeof(date_buffer));
+
+                            //Waits until the condition is verified
                             if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
                             {
                                 xQueueOverwrite(lcdQueue, "Invalid Date!");
@@ -585,57 +608,40 @@ void Date_Time_Task(void *pvParameters)
                             }
 
                             //Write Initial message again
-                            if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                            {
-                                xQueueOverwrite(lcdQueue, "Date? MM/DD/YYYY");
 
-                                xSemaphoreGive(xMutex_lcdQueue);
-                            }
+                            xQueueOverwrite(lcdQueue, "Date? MM/DD/YYYY");
                         }
                     }
-                    else if(key_input == 'C')
+                    else if(key_input == 'C')  //If cancel is pressed (user has cancelled input)
                     {
-                        //If cancel is pressed (user has cancelled input)
-                        //Clear the command buffer
+                        //Clear the date_buffer
                         memset(date_buffer, 0, sizeof(date_buffer));
 
                         //Write Initial message again
-                        if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                        {
-                            xQueueOverwrite(lcdQueue, "Date? MM/DD/YYYY");
-
-                            xSemaphoreGive(xMutex_lcdQueue);
-                        }
+                        xQueueOverwrite(lcdQueue, "Date? MM/DD/YYYY");
                     }
                     else
                     {
-                        if((strlen(date_buffer)) < (CMD_MAX_SIZE - 1))
+                        if((strlen(date_buffer)) < (DATE_MAX_SIZE - 1))  //Check if there is enough space in the date_buffer
                         {
-                            //Check if there is enough space in the cmd_buffer
-                            //Add the key to the end of the command buffer
+                            //Add the key to the end of the date_buffer
                             date_buffer[strlen(date_buffer)] = key_input;
 
-                            if (strlen(date_buffer) == 2){
+                            if (strlen(date_buffer) == 2)
+                            {
                                 //Insert 3rd character ("/") automatically
                                 date_buffer[strlen(date_buffer)] = '/';
-                                //Send added charecter to LCD
-                                if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                                {
-                                    xQueueOverwrite(lcdQueue, "/");
 
-                                    xSemaphoreGive(xMutex_lcdQueue);
-                                }
+                                //Send added character to LCD
+                                xQueueOverwrite(lcdQueue, "/");
                             }
-                            else if (strlen(date_buffer) == 5){
+                            else if (strlen(date_buffer) == 5)
+                            {
                                 //Insert 6th character ("/") automatically
                                 date_buffer[strlen(date_buffer)] = '/';
-                                //Send added charecter to LCD
-                                if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                                {
-                                    xQueueOverwrite(lcdQueue, "/");
 
-                                    xSemaphoreGive(xMutex_lcdQueue);
-                                }
+                                //Send added character to LCD
+                                xQueueOverwrite(lcdQueue, "/");
                             }
 
                             //Null character - terminate the string
@@ -646,26 +652,25 @@ void Date_Time_Task(void *pvParameters)
                             //Handle buffer overflow (invalidate buffer)
                             date_buffer[0] = 'X';
                         }
-
                     }
-
                 }
                 else
                 {
-                    //Input timeout occurred, clear the command buffer
+                    //Input timeout occurred, clear the date_buffer
                     memset(date_buffer, 0, sizeof(date_buffer));
+                    //Write Initial message again
+                    xQueueOverwrite(lcdQueue, "Date? MM/DD/YYYY");
                 }
-
             }
 
-            //Continue time loop
+            //Continue Time loop
 
             //Write Initial message (LCD must be running)
-            if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
+            if(!flag_time_repeat)
             {
                 xQueueOverwrite(lcdQueue, "Time? hh:mm:ss");
 
-                xSemaphoreGive(xMutex_lcdQueue);
+                flag_time_repeat = 1;
             }
 
             // Wait for a message with a timeout of 5 seconds
@@ -674,20 +679,22 @@ void Date_Time_Task(void *pvParameters)
                 //If enter is pressed (user has submitted command)
                 if(key_input == 'E')
                 {
-                    //Call the Date_Process function and store time if valid
+                    //Call the Time_Process function and store time if valid
                     time_ok = Time_Process(time_buffer);
 
-                    //Clear the command buffer
+                    //Clear the time_buffer
                     memset(time_buffer, 0, sizeof(time_buffer));
 
-                    //if time ok, exit time loop
-                    if(time_ok){
+                    //if time_ok == 1, the user entered a valid time and the program can exit date loop
+                    if(time_ok == 1)
+                    {
                         break;
                     }
-                    //if date not ok, print error msg and stay in date loop.
-                    else{
-                        //Clear the date buffer
+                    else    //if time not ok, print error msg and stay in date loop.
+                    {
+                        //Clear the time_buffer
                         memset(time_buffer, 0, sizeof(time_buffer));
+
                         if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
                         {
                             xQueueOverwrite(lcdQueue, "Invalid Time!");
@@ -699,33 +706,21 @@ void Date_Time_Task(void *pvParameters)
                         }
 
                         //Write Initial message again
-                        if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                        {
-                            xQueueOverwrite(lcdQueue, "Time? hh:mm:ss");
-
-                            xSemaphoreGive(xMutex_lcdQueue);
-                        }
+                        xQueueOverwrite(lcdQueue, "Time? hh:mm:ss");
                     }
                 }
-                else if(key_input == 'C')
+                else if(key_input == 'C')   //If cancel is pressed (user has cancelled input)
                 {
-                    //If cancel is pressed (user has cancelled input)
-                    //Clear the command buffer
+                    //Clear the time_buffer
                     memset(time_buffer, 0, sizeof(time_buffer));
 
                     //Write Initial message again
-                    if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                    {
-                        xQueueOverwrite(lcdQueue, "Time? hh:mm:ss");
-
-                        xSemaphoreGive(xMutex_lcdQueue);
-                    }
+                    xQueueOverwrite(lcdQueue, "Time? hh:mm:ss");
                 }
                 else
                 {
-                    if((strlen(time_buffer)) < (CMD_MAX_SIZE - 1))
+                    if((strlen(time_buffer)) < (TIME_MAX_SIZE - 1))  //Check if there is enough space in the time_buffer
                     {
-                        //Check if there is enough space in the cmd_buffer
                         //Add the key to the end of the command buffer
                         time_buffer[strlen(time_buffer)] = key_input;
 
@@ -733,25 +728,17 @@ void Date_Time_Task(void *pvParameters)
                         {
                             //Insert 3rd character (":") automatically
                             time_buffer[strlen(time_buffer)] = ':';
-                            //Send added charecter to LCD
-                            if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                            {
-                                xQueueOverwrite(lcdQueue, ":");
 
-                                xSemaphoreGive(xMutex_lcdQueue);
-                            }
+                            //Send added character to LCD
+                            xQueueOverwrite(lcdQueue, ":");
                         }
                         else if (strlen(time_buffer) == 5)
                         {
                             //Insert 6th character (":") automatically
                             time_buffer[strlen(time_buffer)] = ':';
-                            //Send added charecter to LCD
-                            if(xSemaphoreTake(xMutex_lcdQueue, portMAX_DELAY) == pdTRUE)
-                            {
-                                xQueueOverwrite(lcdQueue, ":");
 
-                                xSemaphoreGive(xMutex_lcdQueue);
-                            }
+                            //Send added character to LCD
+                                xQueueOverwrite(lcdQueue, ":");
                         }
 
                         //Null character - terminate the string
@@ -763,24 +750,22 @@ void Date_Time_Task(void *pvParameters)
                         time_buffer[0] = 'X';
                     }
                 }
-
             }
             else
             {
-                //Input timeout occurred, clear the command buffer
-                memset(date_buffer, 0, sizeof(date_buffer));
+                //Input timeout occurred, clear the time_buffer
+                memset(time_buffer, 0, sizeof(time_buffer));
+                //Write Initial message again
+                xQueueOverwrite(lcdQueue, "Time? hh:mm:ss");
             }
-
-
         }
 
-        //Notify System_Init_Task to continue with start-up.
-        xTaskNotifyGive(xDate_Time_Task);
+        //Notify Date_Time_Task to continue with start-up.
+        xTaskNotifyGive(xSystem_Init_Task);
+
         // Suspend the task (it will not run again)
         vTaskSuspend(NULL);
-
     }
-
 }
 
 //------------------------------------------------------------------- Date_Process: -------------------------------------------------------------------
@@ -869,4 +854,3 @@ bool Time_Process(const char *time_buffer)
     return false;
 
 }
-

@@ -28,12 +28,12 @@ void Init_Peripherals()
     IntMasterEnable();
 
     //For debug purposes we can comment the peripherals we don't want to use
-    Init_Buzzer();
+    //Init_Buzzer();
     Init_Keypad();
     Init_Lcd();
-    Init_Tmp100();
-    Init_Uart();
-    Init_Timer();
+    //Init_Tmp100();
+    //Init_Uart();
+    //Init_Timer();
 }
 
 //-------------------------------------------------------------------- Init_Buzzer: ------------------------------------------------------------------------

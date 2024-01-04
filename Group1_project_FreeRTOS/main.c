@@ -34,12 +34,22 @@ int main(void)
     //Create a binary semaphore for protecting shared resources (lcdQueue, to allow Temperature)
     xSemaphore_Allow_Temperature = xSemaphoreCreateBinary();
 
+    //Create a mutex semaphore for protecting shared resources (lcdQueue, to Access UART Buffer)
+    xMutex_Access_UART_Buffer = xSemaphoreCreateMutex();
+
+    //Create a mutex semaphore for protecting shared resources (lcdQueue, to Access UART Buffer)
+    xMutex_Access_Num_Msgs = xSemaphoreCreateMutex();
+
+
     //Create a mutex semaphore for protecting shared resources (lcdQueue by tmp100, keypad and lcd)
     xMutex_lcdQueue = xSemaphoreCreateMutex();
 
 
     // Create the initialization task with the highest priority
     xTaskCreate(System_Init_Task, "System_Init_Task", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, &xSystem_Init_Task);
+
+    // Create the initialization task with the highest priority
+    xTaskCreate(System_Init_Task, "System_Init_Task", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 2, &xSystem_Init_Task);
 
     //Create the Lcd task with low priority
     xTaskCreate(Lcd_Task, "Lcd_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xLcd_Task);
@@ -48,13 +58,13 @@ int main(void)
     xTaskCreate(Keypad_Task, "Keypad_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xKeypad_Task);
 
     //Create the Command task with low priority
-    xTaskCreate(Command_Task, "Command_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xCommand_Task);
+    //xTaskCreate(Command_Task, "Command_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xCommand_Task);
 
     //Create the Temperature task with low priority
     //xTaskCreate(Tmp_Task, "Tmp_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xTmp_Task);
 
     //Create the Uart task with low priority
-    xTaskCreate(Uart_Task, "Uart_Task", configMINIMAL_STACK_SIZE + 400, NULL, tskIDLE_PRIORITY + 1, &xUart_Task);
+    //xTaskCreate(Uart_Task, "Uart_Task", configMINIMAL_STACK_SIZE + 400, NULL, tskIDLE_PRIORITY + 1, &xUart_Task);
 
 
     // Start the scheduler.  This should not return.
@@ -66,42 +76,3 @@ int main(void)
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//UART_buffer declaration
-/*
-char UART_buffer[BUFFER_SIZE][MSG_SIZE];
-int buffer_head;
-int buffer_tail;
-int num_msgs = 0;
-*/

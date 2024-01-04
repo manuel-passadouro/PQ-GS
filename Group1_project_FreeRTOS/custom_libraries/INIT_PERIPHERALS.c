@@ -3,12 +3,9 @@
 
 //-------------------------------------------------------------------- Init_Peripherals: ------------------------------------------------------------------------
 
-void Init_Peripherals()
+void Init_Peripherals_phase_1()
 {
     //Enable and wait for the port to be ready for access
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);         //PWM Buzzer (PC4)
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM0));
-
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);        //LCD EN (PC5)
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOC));
 
@@ -18,23 +15,36 @@ void Init_Peripherals()
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);        //Keypad Y (PB0, PB1, PB2, PB3) => (Y1, Y2, Y3, Y4) and LCD Data pins (PB4, PB5, PB6, PB7) => (DB4, DB5, DB6, DB7)
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB));
 
+    //Enable interrupts globally
+    IntMasterEnable();
+
+    //Peripheral specific initialization routines
+    Init_Keypad();
+    Init_Lcd();
+}
+
+//-------------------------------------------------------------------- Init_Peripherals_phase_2: ------------------------------------------------------------------------
+
+void Init_Peripherals_phase_2()
+{
+    //Enable and wait for the port to be ready for access
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);         //PWM Buzzer (PC4)
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM0));
+
     SysCtlPeripheralEnable(SYSCTL_PERIPH_WTIMER5);      //Init timer5 (32 bit) to count time for UART timestamp
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_WTIMER5));
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_UART3);        //Enable the UART peripheral
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_UART3));
 
-    //Enable interrupts globally
-    IntMasterEnable();
-
-    //For debug purposes we can comment the peripherals we don't want to use
-    //Init_Buzzer();
-    Init_Keypad();
-    Init_Lcd();
-    //Init_Tmp100();
-    //Init_Uart();
-    //Init_Timer();
+    //Peripheral specific initialization routines
+    Init_Buzzer();
+    Init_Tmp100();
+    Init_Uart();
+    Init_Timer();
 }
+
+
 
 //-------------------------------------------------------------------- Init_Buzzer: ------------------------------------------------------------------------
 

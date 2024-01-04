@@ -177,8 +177,8 @@ void Uart_Task(void *pvParameters)
 void System_Init_Task(void *pvParameters)
 {
     uint8_t i;
-    //Initialize system peripherals
-    Init_Peripherals();
+    //Initialize essential system peripherals
+    Init_Peripherals_phase_1();
 
     //Initialize UART_buffer
     for (i = 0; i < BUFFER_SIZE; i++)
@@ -215,7 +215,6 @@ void System_Init_Task(void *pvParameters)
     xTaskCreate(Date_Time_Task, "Date_Time_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &xDate_Time_Task);
 
 
-    /*
     //Wait for Date_Time_task notification
     if(ulTaskNotifyTake(pdTRUE, portMAX_DELAY) == pdPASS)
     {
@@ -230,19 +229,9 @@ void System_Init_Task(void *pvParameters)
 
         start_time = getTime();
     }
-    */
 
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    vTaskSuspend(xDate_Time_Task);
-    //Store start time (set manually in TIME.h)
-    //start_time = getTime();
-
-    //Init rest of stuff that the other tasks need
-    Init_Buzzer();
-    Init_Tmp100();
-    Init_Uart();
-    Init_Timer();
+    //Initialize remaining peripherals
+    Init_Peripherals_phase_2();
 
     //Create the Command task with low priority
     xTaskCreate(Command_Task, "Command_Task", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, &xCommand_Task);

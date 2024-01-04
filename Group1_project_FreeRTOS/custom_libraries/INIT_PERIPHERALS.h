@@ -18,7 +18,8 @@
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
-void Init_Peripherals(void);
+void Init_Peripherals_phase_1(void);
+void Init_Peripherals_phase_2(void);
 void Init_Buzzer(void);
 void Init_Keypad(void);
 void Init_Lcd(void);

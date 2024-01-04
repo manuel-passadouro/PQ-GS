@@ -66,11 +66,26 @@ uint8_t Receive_UART(uint8_t buffer_head)
         }
     }
 
+    /*
     //Make sure uart buffer is empty
     while (UARTCharsAvail(UART3_BASE))
     {
         char discard = UARTCharGet(UART3_BASE);
     }
+    */
+
+    //Empty UART FIFO to prevent msg overwrite.
+
+    // Disable UART3 to make changes
+    UART3_CTL_R &= ~UART_CTL_UARTEN;
+    // Flush the FIFO by clearing the RX and TX FIFOs
+    UART3_CTL_R |= UART_CTL_RXE | UART_CTL_TXE;
+    // Enable UART3
+    UART3_CTL_R |= UART_CTL_UARTEN;
+
+    //Check for empty FIFO
+    if(UART3_FR_R & UART_FR_RXFE != 0);
+
 
     // Add a null character at the end of string
     msg[sizeof(msg) - 1] = '\0';

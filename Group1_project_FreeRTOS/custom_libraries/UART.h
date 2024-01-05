@@ -1,7 +1,7 @@
 #ifndef UART_H
 #define UART_H
 
-//Includes
+// Includes.
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -24,7 +24,7 @@
 #include "TIME.h"
 #include "CUSTOM_TASK.h"
 
-//UART defines
+// UART defines.
 #define BUFFER_SIZE 20
 #define MSG_SIZE 50
 #define NUM_PACKET_STRS 4
@@ -47,4 +47,4 @@ struct packet
 uint8_t Receive_UART(uint8_t buffer_head);
 void UART3IntHandler(void);
 
-#endif //UART_H
+#endif // UART_H.

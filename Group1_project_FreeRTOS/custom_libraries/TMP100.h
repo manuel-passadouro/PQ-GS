@@ -1,7 +1,7 @@
 #ifndef TMP100_H
 #define TMP100_H
 
-//Includes
+// Includes.
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -15,7 +15,7 @@
 #include <math.h>
 #include "LCD.h"
 
-//I2C TMP100 defines
+// I2C TMP100 defines.
 #define I2C_BASE_ADDR I2C1_BASE
 #define TMP100_I2C_ADDRESS 0x48
 #define TMP100_CONFIG_REG 0x01
@@ -30,4 +30,4 @@ void Reverse(char* str, int len);
 int IntToString(int x, char str[], int d);
 void FloatToArray(float n, char* res, int afterpoint);
 
-#endif //TMP100_H
+#endif // TMP100_H.

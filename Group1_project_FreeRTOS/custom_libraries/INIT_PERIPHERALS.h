@@ -1,7 +1,7 @@
 #ifndef INIT_PERIPHERALS_H
 #define INIT_PERIPHERALS_H
 
-//Includes
+// Includes.
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/tm4c123gh6pm.h"
@@ -18,8 +18,8 @@
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
-void Init_Peripherals_phase_1(void);
-void Init_Peripherals_phase_2(void);
+void Init_Peripherals_Phase_1(void);
+void Init_Peripherals_Phase_2(void);
 void Init_Buzzer(void);
 void Init_Keypad(void);
 void Init_Lcd(void);
@@ -27,4 +27,4 @@ void Init_Tmp100(void);
 void Init_Uart(void);
 void Init_Timer(void);
 
-#endif //Interrupts_H
+#endif // Interrupts_H.

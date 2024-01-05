@@ -1,7 +1,7 @@
 #ifndef TIME_H
 #define TIME_H
 
-//Includes
+// Includes.
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -17,4 +17,4 @@ struct tm getTime(void);
 
 //------------------------------------------------------------------------- PROTOTYPES: ------------------------------------------------------------------------
 
-#endif // TIME_H
+#endif // TIME_H.

@@ -1,7 +1,7 @@
 #ifndef CUSTOM_TASK_H
 #define CUSTOM_TASK_H
 
-//Includes
+// Includes.
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -21,7 +21,7 @@
 #include "UART.h"
 #include "INIT_PERIPHERALS.h"
 
-//CUSTOM TASK defines
+// CUSTOM TASK defines.
 #define CMD_MAX_SIZE 4
 #define DATE_MAX_SIZE 11
 #define TIME_MAX_SIZE 9
@@ -43,7 +43,7 @@ extern TaskHandle_t xSystem_Init_Task;
 extern SemaphoreHandle_t xSemaphore_Allow_Temperature;
 extern SemaphoreHandle_t xMutex_Access_UART_Buffer;
 extern SemaphoreHandle_t xMutex_Access_Num_Msgs;
-extern SemaphoreHandle_t xMutex_lcdQueue;
+extern SemaphoreHandle_t xMutex_User_Input;
 
 extern struct tm start_time;
 
@@ -61,4 +61,4 @@ bool Command_Process(const char *command, bool buzzer_toggle);
 bool Date_Process(const char *date_buffer);
 bool Time_Process(const char *time_buffer);
 
-#endif // CUSTOM_TASK_H
+#endif // CUSTOM_TASK_H.

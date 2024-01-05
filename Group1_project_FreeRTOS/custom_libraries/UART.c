@@ -1,4 +1,4 @@
-//Includes
+// Includes.
 #include "UART.h"
 
 struct packet UART_buffer[BUFFER_SIZE];
@@ -31,80 +31,62 @@ uint8_t Receive_UART(uint8_t buffer_head)
 
     struct tm *current_time_info;
 
-    //Clear msg buffer
+    // Clear msg buffer.
     memset(msg, 0, sizeof(msg));
 
     while (count < MSG_SIZE - 1)
     {
-        //Waits until one character be ready to be read
+        // Waits until one character be ready to be read.
         while (!UARTCharsAvail(UART3_BASE));
 
-        //Read a character from UART3
+        // Read a character from UART3.
         receivedChar = UARTCharGet(UART3_BASE);
 
-        //Checks if it is a 'P' character
+        // Checks if it is a 'P' character.
         if (receivedChar == 'P')
         {
             charP = 1;
         }
 
-        //Checks if it is a terminal character
+        // Checks if it is a terminal character.
         if (receivedChar == '\n' || receivedChar == '\r')
         {
-            // Add a null character at the end of string
-            msg[sizeof(msg) - 1] = '\0';
-
             vTaskDelay(10);
 
             break;
         }
 
-        //Stores the character in the buffer
+        // Stores the character in the buffer.
         if(charP == 1)
         {
             msg[i++] = receivedChar;
         }
     }
 
-    /*
-    //Make sure uart buffer is empty
+    // Make sure UART buffer is empty.
     while (UARTCharsAvail(UART3_BASE))
     {
         char discard = UARTCharGet(UART3_BASE);
     }
-    */
 
-    //Empty UART FIFO to prevent msg overwrite.
-
-    // Disable UART3 to make changes
-    UART3_CTL_R &= ~UART_CTL_UARTEN;
-    // Flush the FIFO by clearing the RX and TX FIFOs
-    UART3_CTL_R |= UART_CTL_RXE | UART_CTL_TXE;
-    // Enable UART3
-    UART3_CTL_R |= UART_CTL_UARTEN;
-
-    //Check for empty FIFO
-    if(UART3_FR_R & UART_FR_RXFE != 0);
-
-
-    // Add a null character at the end of string
+    // Add a null character at the end of string.
     msg[sizeof(msg) - 1] = '\0';
 
-    //Parse and store received message to UART_buffer (protected with semaphore)
-    //Check if empty?
+    // Parse and store received message to UART_buffer (protected with semaphore).
+    // Check if empty?
     if(xSemaphoreTake(xMutex_Access_UART_Buffer, portMAX_DELAY) == pdTRUE)
     {
         sscanf(msg, "%8[^,],%24[^;]%14[^\0]", UART_buffer[buffer_head].PQ_ID, sensors_total, UART_buffer[buffer_head].LEN_RSSI_SNR);
 
         if (position >= 0 && position < strlen(sensors_total))
         {
-            //Copy the first part of the string to UART_buffer[0].SENSORS_PREQUELA
+            // Copy the first part of the string to UART_buffer[0].SENSORS_PREQUELA.
             strncpy(UART_buffer[buffer_head].SENSORS_PREQUELA, sensors_total, position);
 
-            //Null-terminate UART_buffer[0].SENSORS_PREQUELA
+            // Null-terminate UART_buffer[0].SENSORS_PREQUELA.
             UART_buffer[buffer_head].SENSORS_PREQUELA[position] = '\0';
 
-            // Copy the second part of the string to UART_buffer[0].SENSORS_SEQUELA
+            // Copy the second part of the string to UART_buffer[0].SENSORS_SEQUELA.
             strcpy(UART_buffer[buffer_head].SENSORS_SEQUELA, sensors_total + position);
         }
 
@@ -119,30 +101,27 @@ uint8_t Receive_UART(uint8_t buffer_head)
         xSemaphoreGive(xMutex_Access_UART_Buffer);
     }
 
-    //Store start time (set manually in TIME.h)
-    //start_time = getTime();
-
-    //Get the current timestamp from the system timer
+    // Get the current timestamp from the system timer.
     timestamp = TimerValueGet64(WTIMER5_BASE);
 
-    //Calculate elapsed seconds using clock frequency
+    // Calculate elapsed seconds using clock frequency.
     raw_time_t =  (time_t)((timestamp / SysCtlClockGet()));
 
-    //Convert start_time to time_t format for calculations (returns the value in seconds!)
+    // Convert start_time to time_t format for calculations (returns the value in seconds!).
     start_time_t = mktime(&start_time);
 
-    //Calculate the current time as time_t
+    // Calculate the current time as time_t.
     current_time_t = start_time_t + raw_time_t;
 
-    //Convert time in time_t to standard C time format
+    // Convert time in time_t to standard C time format.
     current_time_info = localtime(&current_time_t);
 
-    //Convert from standard C time format to string
+    // Convert from standard C time format to string.
     strftime(current_time_str, sizeof(current_time_str), "%m-%d-%Y %H:%M:%S", current_time_info);
 
     strcpy(UART_buffer[buffer_head].TIMESTAMP, current_time_str);
 
-    //Increments buffer head, wraps around when buffer is full (circular buffer)
+    // Increments buffer head, wraps around when buffer is full (circular buffer).
     buffer_head = (buffer_head + 1) % BUFFER_SIZE;
 
     if(xSemaphoreTake(xMutex_Access_Num_Msgs, portMAX_DELAY) == pdTRUE)
@@ -162,18 +141,18 @@ void UART3IntHandler(void)
     uint32_t ui32Status;
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-   //Get the interrupt status (masked interrupt should be RX type)
+   // Get the interrupt status (masked interrupt should be RX type).
    ui32Status = UARTIntStatus(UART3_BASE, true);
 
-   //Clear interrupt flag
+   // Clear interrupt flag.
    UARTIntClear(UART3_BASE, ui32Status);
 
-   //Check if the receive interrupt is triggered (if status matches UART interrupt mask)
+   // Check if the receive interrupt is triggered (if status matches UART interrupt mask).
    if (ui32Status & UART_INT_RX)
    {
        vTaskNotifyGiveFromISR(xUart_Task, &xHigherPriorityTaskWoken);
    }
 
-   //To prevent the program to get stuck in the ISR
+   // To prevent the program to get stuck in the ISR.
    portYIELD_FROM_ISR(true);
 }

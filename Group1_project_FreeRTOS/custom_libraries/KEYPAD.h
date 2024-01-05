@@ -1,7 +1,7 @@
 #ifndef KEYPAD_H
 #define KEYPAD_H
 
-//Includes
+// Includes.
 #include <stdint.h>
 #include <stdbool.h>
 #include "inc/tm4c123gh6pm.h"
@@ -17,7 +17,7 @@
 #include "queue.h"
 #include "task.h"
 
-//Some KEYPAD defines to help understanding the code :)
+// Some KEYPAD defines to help understanding the code. :)
 #define GPIO_PIN_ALL 0b1111
 #define ON 0x01
 #define OFF 0x00
@@ -36,4 +36,4 @@ extern char key[1];
 
 void PortEIntHandler(void);
 
-#endif //Interrupts_H
+#endif // Interrupts_H.
